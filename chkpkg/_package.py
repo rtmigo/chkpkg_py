@@ -34,7 +34,11 @@ class TempVenv:
 
     @property
     def executable(self):
+
         if self._executable is None:
+
+            print(os.listdir(os.path.join(self.venv_dir, 'bin')))
+
             for basename in ('python3', 'python3.exe', 'python', 'python.exe'):
                 p = os.path.join(self.venv_dir, 'bin', basename)
                 if os.path.exists(p):
