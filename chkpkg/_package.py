@@ -27,6 +27,17 @@ def print_command(cmd, title, at):
     print()
 
 
+def _venv_dir_to_executable(venv_dir: str) -> str:
+    p = os.path.join(venv_dir, 'bin', 'python')
+    if os.path.exists(p):
+        return p
+    p = os.path.join(venv_dir, 'Scripts', 'python.exe')
+    if os.path.exists(p):
+        return p
+    raise FileNotFoundError(
+        f"Cannot find Python executable inside {venv_dir}")
+
+
 class TempVenv:
     def __init__(self):
         self._temp_dir: Optional[TemporaryDirectory] = None
@@ -34,17 +45,8 @@ class TempVenv:
 
     @property
     def executable(self):
-
         if self._executable is None:
-            for p in (os.path.join(self.venv_dir, 'bin', 'python'),
-                      os.path.join(self.venv_dir, 'Scripts', 'python.exe')):
-                if os.path.exists(p):
-                    self._executable = p
-                    break
-
-        if self._executable is None:
-            raise FileNotFoundError(
-                f"Cannot find Python executable inside {self.venv_dir}")
+            self._executable = _venv_dir_to_executable(self.venv_dir)
         return self._executable
 
     @property
