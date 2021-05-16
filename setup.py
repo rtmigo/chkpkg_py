@@ -21,6 +21,7 @@ setup(
     author_email="ortemeo@gmail.com",
     url='https://github.com/rtmigo/chkpkg_py#readme',
 
+    python_requires='>=3.6',
     install_requires=[],
     packages=[name],
 
@@ -36,6 +37,7 @@ setup(
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: MIT License',
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Operating System :: POSIX",
