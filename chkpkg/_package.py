@@ -59,7 +59,7 @@ class TempVenv:
         assert os.path.exists(self._temp_dir.name)
         assert os.path.isdir(self._temp_dir.name)
         print(f"Initializing venv in {self._temp_dir.name}")
-        venv.create(self._temp_dir.name, with_pip=True)
+        venv.create(env_dir=self._temp_dir.name, with_pip=True, clear=True)
         return self.executable
 
     def __exit__(self, exc_type, exc_val, exc_tb):
