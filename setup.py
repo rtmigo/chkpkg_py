@@ -25,9 +25,10 @@ setup(
     install_requires=[],
     packages=[name],
 
-    description="Builds and verifies .whl packages",
+    description="Checks a Python package intended to be published on PyPi. "
+                "Сan be used as part of CI pipeline",
 
-    keywords="wheel package distribution wheel whl".split(),
+    keywords="wheel package distribution wheel whl testing".split(),
 
     long_description=(Path(__file__).parent / 'README.md').read_text(),
     long_description_content_type='text/markdown',
@@ -35,9 +36,10 @@ setup(
     license='MIT',
 
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Operating System :: POSIX",
