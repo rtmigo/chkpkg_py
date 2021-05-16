@@ -90,7 +90,7 @@ class Package:
         # creates "build", "dist", "*.egg-info"
         builder_cmd('setup.py sdist bdist_wheel', title='Building the .whl')
 
-        project_root = Path('..')
+        project_root = Path('.')
         whl = find_latest_wheel(project_root)
         whl = whl.absolute()
         print(f'Latest wheel: {whl}')
