@@ -54,8 +54,7 @@ jobs:
           cd test_projects/invalid_metadata
           python test_pkg.py
 
-
-      - name: Run pkg tests
+      - name: "Pyrel: testing chkpkg as a package"
         if: matrix.os != 'windows-latest'
         run: |
           ./test_pkg.sh
