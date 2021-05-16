@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 from pathlib import Path
-
 from setuptools import setup
+import sys
+
+sys.setdefaultencoding("UTF-8")  # Windows
 
 
 def load_module_dict(filename: str) -> dict:
@@ -23,7 +22,6 @@ setup(
     author="Artёm IG",
     author_email="ortemeo@gmail.com",
     url='https://github.com/rtmigo/chkpkg_py#readme',
-
 
     python_requires='>=3.6',
     install_requires=[],
