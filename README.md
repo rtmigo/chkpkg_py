@@ -22,22 +22,31 @@ with Package() as pkg:
     pkd.run_python_code('import mymodule')
 ```
 
-This is equivalent to the code
+This code runs many commands in child processes. If at least one of them 
+returns a non-zero exit code, an exception will be thrown.
+
+## Steps
+
+Without context, the code would look like this:
 
 ``` python3
 from chkpkg import Package
 
 pkg = Package()
+
 try:
+    # step 1
     pkg.install()
+    
+    # step 2   
     pkg.run_python_code('import mymodule')
+
 finally:
+    # step 3
     pkg.cleanup()    
 ```
 
-## Steps
-
-### Install package into a virtual environment
+### Step 1: check, build, install
 
 ``` python3
 pkg.install()
@@ -52,7 +61,7 @@ The `install` method:
 - Installs the package from the newly created `.whl` into the clean virtual
   environment
   
-### Check that the package can be imported
+### Step 2: import, run
 
 ``` python3
 pkg.run_python_code('import my_package')
@@ -69,7 +78,7 @@ pkg.run_python_code('import my_package; print(my_package.func())')
 
 The main question here is whether the code will execute successfully (with exit code 0) or will an error occur (with non-zero exit codes).
 
-### Delete temporary files
+### Step 3: cleanup
 
 ``` python3
 pkg.cleanup()
