@@ -43,6 +43,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Run unit tests
         run: |
+          # weirdly this test fails on Windows with 'python3' instead 'python'
           cd sample_project
           python test_pkg.py
 #      - name: Run pkg tests
