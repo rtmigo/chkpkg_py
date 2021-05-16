@@ -42,14 +42,14 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Run unit tests
+        # weirdly this test fails on Windows with 'python3' instead 'python'
         run: |
-          # weirdly this test fails on Windows with 'python3' instead 'python'
           cd sample_project
           python test_pkg.py
-#      - name: Run pkg tests
-#        if: matrix.os != 'windows-latest'
-#        run: |
-#          ./test_pkg.sh
+      - name: Run pkg tests
+        if: matrix.os != 'windows-latest'
+        run: |
+          ./test_pkg.sh
 
   to-staging:
     needs: test
