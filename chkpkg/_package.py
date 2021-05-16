@@ -8,33 +8,8 @@ from typing import Optional, List, Union
 import venv
 import os
 
-
-class TwineCheckFailed(BaseException):
-    def __init__(self, e):
-        self.inner = e
-
-
-class FailedToInstallPackage(BaseException):
-    def __init__(self, e):
-        self.inner = e
-
-
-class CannotInitializeEnvironment(BaseException):
-    def __init__(self, e):
-        self.inner = e
-
-
-class CodeExecutionFailed(BaseException):
-    def __init__(self, e):
-        self.inner = e
-
-
-def header(s: str, at: str):
-    print('=' * 80)
-    if at:
-        s += ' @ ' + at
-    print(s)
-    print('-' * 80)
+from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
+    CannotInitializeEnvironment, CodeExecutionFailed
 
 
 def print_command(cmd, title, at):
@@ -97,7 +72,6 @@ def find_latest_wheel(project_root: Path) -> Optional[Path]:
 
 
 class Runner:
-
     def __init__(self, python, at):
         self.python = python
         self.at = at
@@ -114,10 +88,6 @@ class Runner:
                 raise
             else:
                 raise exception(e)
-
-
-# def _contains_setup(path: Path):
-#   return (path / "setup.py").exists()
 
 
 class Package:
