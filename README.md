@@ -1,10 +1,12 @@
+# [chkpkg](https://github.com/rtmigo/chkpkg_py#readme)
+
 Checks a Python package intended to be published on PyPi: 
 - can we build a `.whl` distribution from it?
 - сan we install a package from the newly built `.whl`? 
 - can we import the installed package into the code?
 
 `chkpkg` can be used as part of CI pipeline. All configuration is done from 
-a Python script
+a Python script, which is as cross-platform as Python itself.
 
 
 ---
