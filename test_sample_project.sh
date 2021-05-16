@@ -5,6 +5,8 @@ set -e && cd "${0%/*}"
 # This script allows to run some tests locally from POSIX
 
 pip3 install -e .
-cd sample_project
 
-python3 test_pkg.py
+
+cd "${0%/*}"/test_projects/greeter && python3 ./test_pkg.py
+cd "${0%/*}"/test_projects/invalid_metadata && python3 ./test_pkg.py
+
