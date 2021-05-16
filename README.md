@@ -1,11 +1,9 @@
-**DRAFT**
-
-`chkpkg` will:
-
-* build your Python **PyPi package** (with [twine](https://pypi.org/project/twine/))
-* **install it locally** with **pip** into a temporary
+* builds your Python **PyPi package** (with [twine](https://pypi.org/project/twine/))
+* **installs it locally** with **pip** into a temporary
   [virtual environment](https://docs.python.org/3/library/venv.html)
-* let you **check whether it really installed** there
+* checks **whether it can be imported** from there
+
+`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and Windows.
 
 # Install
 
