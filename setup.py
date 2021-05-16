@@ -28,7 +28,8 @@ setup(
 
     keywords="wheel package distribution wheel whl testing".split(),
 
-    long_description=(Path(__file__).parent / 'README.md').read_text(encoding='utf-8'),
+    long_description=(Path(__file__).parent / 'README.md')
+        .read_text(encoding='utf-8'),  # need encoding for Windows
     long_description_content_type='text/markdown',
 
     license='MIT',
