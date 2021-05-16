@@ -56,10 +56,10 @@ class TempVenv:
 
     def __enter__(self):
         self._temp_dir = TemporaryDirectory()
-        assert os.path.exists(self._temp_dir.name)
-        assert os.path.isdir(self._temp_dir.name)
-        print(f"Initializing venv in {self._temp_dir.name}")
-        venv.create(env_dir=self._temp_dir.name, with_pip=True, clear=True)
+        assert os.path.exists(self.venv_dir)
+        assert os.path.isdir(self.venv_dir)
+        print(f"Initializing venv in {self.venv_dir}")
+        venv.create(env_dir=self.venv_dir, with_pip=True, clear=True)
         return self.executable
 
     def __exit__(self, exc_type, exc_val, exc_tb):

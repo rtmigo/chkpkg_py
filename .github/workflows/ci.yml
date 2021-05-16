@@ -44,7 +44,7 @@ jobs:
       - name: Run unit tests
         run: |
           cd sample_project
-          python3 test_pkg.py
+          python test_pkg.py
 #      - name: Run pkg tests
 #        if: matrix.os != 'windows-latest'
 #        run: |
