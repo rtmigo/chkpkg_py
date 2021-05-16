@@ -21,12 +21,12 @@ setup(
     author_email="ortemeo@gmail.com",
     url='https://github.com/rtmigo/chkpkg_py#readme',
 
+
     python_requires='>=3.6',
     install_requires=[],
     packages=[name],
 
-    description="Checks a Python package intended to be published on PyPi. "
-                "Сan be used as part of CI pipeline",
+    description="Checks Python packages intended to be published on PyPi",
 
     keywords="wheel package distribution wheel whl testing".split(),
 
