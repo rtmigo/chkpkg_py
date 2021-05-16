@@ -36,14 +36,12 @@ class TempVenv:
     def executable(self):
 
         if self._executable is None:
-
-            print(os.listdir(os.path.join(self.venv_dir)))
-
-            for basename in ('python3', 'python3.exe', 'python', 'python.exe'):
-                p = os.path.join(self.venv_dir, 'bin', basename)
+            for p in (os.path.join(self.venv_dir, 'bin', 'python'),
+                      os.path.join(self.venv_dir, 'Scripts', 'python.exe')):
                 if os.path.exists(p):
                     self._executable = p
                     break
+
         if self._executable is None:
             raise FileNotFoundError(
                 f"Cannot find Python executable inside {self.venv_dir}")
