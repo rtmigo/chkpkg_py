@@ -116,8 +116,8 @@ class Runner:
                 raise exception(e)
 
 
-#def _contains_setup(path: Path):
- #   return (path / "setup.py").exists()
+# def _contains_setup(path: Path):
+#   return (path / "setup.py").exists()
 
 
 class Package:
@@ -130,9 +130,6 @@ class Package:
             self.project_source_dir = project_dir.absolute()
         else:
             self.project_source_dir = Path('.').absolute()
-#        for p in [Path('.'), Path(__file__).parent]:
- #           if _contains_setup(p):
-  #              self.project_source_dir = p
 
     def __enter__(self):
         self.init()
@@ -160,7 +157,6 @@ class Package:
                     title='Building the .whl',
                     cwd=self.project_source_dir)
 
-        #project_root = Path('.')
         whl = find_latest_wheel(self.project_source_dir)
         whl = whl.absolute()
         print(f'Latest wheel: {whl}')
