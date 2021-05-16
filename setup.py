@@ -1,8 +1,5 @@
 from pathlib import Path
 from setuptools import setup
-import sys
-
-sys.setdefaultencoding("UTF-8")  # Windows
 
 
 def load_module_dict(filename: str) -> dict:
@@ -31,7 +28,7 @@ setup(
 
     keywords="wheel package distribution wheel whl testing".split(),
 
-    long_description=(Path(__file__).parent / 'README.md').read_text(),
+    long_description=(Path(__file__).parent / 'README.md').read_text(encoding='utf-8'),
     long_description_content_type='text/markdown',
 
     license='MIT',
