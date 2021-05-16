@@ -3,7 +3,9 @@
   [virtual environment](https://docs.python.org/3/library/venv.html)
 * checks **whether it can be imported** from there
 
-`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and Windows.
+---
+
+`chkpkg` was tested in Python 3.6, 3.9 and 3.10-beta.1 on macOS, Ubuntu and Windows.
 
 # Install
 
