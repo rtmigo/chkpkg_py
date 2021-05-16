@@ -55,10 +55,10 @@ pkg.install()
 The `install` method:
 
 - Creates a temporary virtual environment capable of building `.whl` files
-- Verifies a package with `twine check`
-- Creates a distribution as a `.whl` file
-- Creates another virtual environment without preinstalled packages
-- Installs the package from the newly created `.whl` into the clean virtual
+  - Verifies the package source with `twine check`
+  - Creates a distribution as a `.whl` file
+- Creates another temporary virtual environment without preinstalled packages
+  - Installs the package from the newly created `.whl` into the clean virtual
   environment
   
 ### Step 2: import, run
