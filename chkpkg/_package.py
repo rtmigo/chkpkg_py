@@ -56,6 +56,8 @@ class TempVenv:
 
     def __enter__(self):
         self._temp_dir = TemporaryDirectory()
+        assert os.path.exists(self._temp_dir.name)
+        assert os.path.isdir(self._temp_dir.name)
         venv.create(self._temp_dir.name, with_pip=True)
         return self.executable
 
