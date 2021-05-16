@@ -7,6 +7,8 @@
   [virtual environment](https://docs.python.org/3/library/venv.html)
 * let you **check whether it really installed** there
 
+CI tests are done in Python 3.8-3.9 on macOS, Ubuntu and Windows.
+
 # Install
 
 ``` bash
