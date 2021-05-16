@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# we will test CHKPKG itself with PYREL, an older package for the same task
+# this script tests whether CHKPKG itself is a correct package for PyPi.
+# The script uses PYREL: another tool for testing packages.
+# Sadly, pyrel does not work on Windows, so this check is POSIX-only
 
 set -e
 

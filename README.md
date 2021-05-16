@@ -1,7 +1,11 @@
-* builds your Python **PyPi package** (with [twine](https://pypi.org/project/twine/))
-* **installs it locally** with **pip** into a temporary
-  [virtual environment](https://docs.python.org/3/library/venv.html)
-* checks **whether it can be imported** from there
+Checks a Python package intended to be published on PyPi: 
+- can we build a `.whl` distribution from it?
+- сan we install a package from the newly built `.whl`? 
+- can we import the installed package into the code?
+
+`chkpkg` can be used as part of CI pipeline. All configuration is done from 
+a Python script
+
 
 ---
 
