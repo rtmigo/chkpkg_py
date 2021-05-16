@@ -47,6 +47,7 @@ class TempVenv:
     def executable(self):
         if self._executable is None:
             self._executable = _venv_dir_to_executable(self.venv_dir)
+            print(f"The python executable: {self._executable}")
         return self._executable
 
     @property
