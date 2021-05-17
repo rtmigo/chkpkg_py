@@ -27,11 +27,17 @@ pip3 install chkpkg
 from chkpkg import Package
 
 with Package() as pkg:
-    pkd.run_python_code('import mymodule')
+    pkg.run_python_code('import mypackage; mypackage.myfunc()')
+    
+print("Package is OK!")
 ```
+This code creates a distribution, installs the package from that distribution, 
+imports the newly installed package and calls `myfunc()` from it. If at least 
+one command returned a non-zero exit code, an exception would be thrown. 
+The absence of exceptions means that the package is fine.
 
-This code runs many commands in child processes. If at least one of them returns
-a non-zero exit code, an exception will be thrown.
+By default, we assume that the `setup.py` file is located in the current working 
+directory. You can specify a different path using the argument `Package(project_dir=...)` 
 
 ## Steps
 
@@ -54,7 +60,7 @@ finally:
     pkg.cleanup()    
 ```
 
-### Step 1: check, build, install
+### Step 1: build, verify, install
 
 ``` python3
 pkg.install()
@@ -63,8 +69,8 @@ pkg.install()
 The `install` method:
 
 - Creates a temporary virtual environment capable of building `.whl` files
-    - Verifies the package source with `twine check`
-    - Creates a distribution as a `.whl` file
+    - Creates a distribution as a `.whl` file (`setup.py bdist_wheel`)
+    - Verifies the package source (`twine check --strict`)    
 - Creates another temporary virtual environment without preinstalled packages
     - Installs the package from the newly created `.whl` into the clean virtual
       environment
@@ -81,10 +87,10 @@ and can be imported without errors.
 You can also run some functions from the imported package.
 
 ``` python3
-pkg.run_python_code('import my_package; print(my_package.func())')
+pkg.run_python_code('import my_package; my_package.func()')
 ```
 
-The main question here is whether the code will execute successfully (with exit
+The main intrigue here is whether the code will execute successfully (with exit
 code 0) or will an error occur (with non-zero exit codes).
 
 ### Step 3: cleanup

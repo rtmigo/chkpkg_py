@@ -3,18 +3,13 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from subprocess import check_call
+from subprocess import check_call, CalledProcessError
 from typing import Optional, List, Union
 import venv
 import os
 
-
-def header(s: str, at: str):
-    print('=' * 80)
-    if at:
-        s += ' @ ' + at
-    print(s)
-    print('-' * 80)
+from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
+    CannotInitializeEnvironment, CodeExecutionFailed
 
 
 def print_command(cmd, title, at):
@@ -67,8 +62,9 @@ class TempVenv:
         self._temp_dir.cleanup()
 
 
-def find_latest_wheel(project_root: Path) -> Optional[Path]:
-    files = [(f.stat().st_mtime, f) for f in project_root.glob('dist/*.whl')]
+def find_latest_wheel(parent_dir: Path) -> Path:
+    """Finds *.whl file with the latest modification time"""
+    files = [(f.stat().st_mtime, f) for f in parent_dir.glob('*.whl')]
     if not files:
         raise FileNotFoundError(".whl file not found")
     max_mod_time = max((mt for mt, _ in files))
@@ -76,71 +72,132 @@ def find_latest_wheel(project_root: Path) -> Optional[Path]:
     return max_mod_time_file
 
 
-class Package:
+class Runner:
+    def __init__(self, exe, at):
+        self.exe = exe
+        self.at = at
 
-    def __init__(self):
+    def run(self, args: Union[str, List[str]], title=None, cwd=None,
+            exception=None):
+        args_list = args.split() if isinstance(args, str) else args
+        args_list = [self.exe] + args_list
+        print_command(cmd=args_list, at=self.at, title=title)
+        try:
+            check_call(args_list, cwd=cwd)
+        except CalledProcessError as e:
+            if exception is None:
+                raise
+            else:
+                raise exception(e)
+
+
+class Package:
+    """During initialization, this object creates a .whl distribution
+    and installs the packages from the distribution into a test virtual
+    environment.
+
+    After that, using the methods of the object, we can execute commands
+    in the test environment, checking that the packages were
+    installed correctly."""
+
+    def __init__(self, project_dir: Union[str, Path] = '.'):
         self._close_us = list()
-        self._installer_python: Optional[str] = None
+        self._installer: Optional[Runner] = None
+        self.project_source_dir = Path(project_dir).absolute()
 
     def __enter__(self):
         self.init()
         return self
+
+    def _dist_exists(self):
+        return (self.project_source_dir / "dist").exists()
+
+    def _build_exists(self):
+        return (self.project_source_dir / "build").exists()
+
+    def _eggs_count(self):
+        return sum(1 for _ in self.project_source_dir.glob('*.egg-info'))
 
     def init(self):
         tv = TempVenv()
         self._close_us.append(tv)
         builder_python = tv.__enter__()
 
-        def builder_cmd(args: str, title=None):
-            cmd = [builder_python] + args.split()
-            print_command(cmd=cmd, at='builder venv', title=title)
-            check_call(cmd)
+        builder = Runner(builder_python, at='builder venv')
 
-        builder_cmd('-m pip install --upgrade pip',
-                    title='Upgrading pip')
+        builder.run('-m pip install --upgrade pip',
+                    title='Upgrading pip',
+                    exception=CannotInitializeEnvironment)
 
-        builder_cmd(
+        dist_existed = self._dist_exists()
+        build_existed = self._build_exists()
+        eggs_count_existed = self._eggs_count()
+
+        builder.run(
             '-m pip install setuptools wheel twine --force-reinstall',
-            title='Installing building requirements')
+            title='Installing building requirements',
+            exception=CannotInitializeEnvironment)
 
-        # building the "dist" directory with .whl file inside
-        # creates "build", "dist", "*.egg-info"
-        builder_cmd('setup.py sdist bdist_wheel', title='Building the .whl')
+        # the basic command is 'setup.py sdist bdist_wheel'.
+        # But it creates ./build, ./dist and ./*.egg-info in the project
+        # directory.
+        #
+        # To avoid modifying the project dir, we create a temp directory
+        # for the build and use a little more complicated command
+        #
+        with TemporaryDirectory() as temp_build_dir:
+            dist_dir = os.path.join(temp_build_dir, "dist")
 
-        project_root = Path('.')
-        whl = find_latest_wheel(project_root)
-        whl = whl.absolute()
-        print(f'Latest wheel: {whl}')
+            cmd = ['setup.py',
+                   'egg_info', '--egg-base', temp_build_dir,
+                   'sdist', '--dist-dir', dist_dir,  # do we need this?
+                   'bdist_wheel', '--dist-dir', dist_dir,
+                   'clean', '--all']
 
-        # running [twine check ./dist/*]
-        builder_cmd('-m twine check ./dist/* --strict', title='Twine check')
+            builder.run(cmd,
+                        title='Building the .whl',
+                        cwd=self.project_source_dir)
 
-        installer_venv = TempVenv()
-        self._close_us.append(installer_venv)
-        self._installer_python = installer_venv.__enter__()
+            # check we did not create new junk
+            assert self._dist_exists() == dist_existed
+            assert self._build_exists() == build_existed
+            assert self._eggs_count() == eggs_count_existed
 
-        self._installer_cmd('-m pip install --upgrade pip',
-                            title='Upgrading pip')
+            # finding the .whl file we just created
+            whl = find_latest_wheel(Path(dist_dir))
+            whl = whl.absolute()
+            print(f'Latest wheel: {whl}')
 
-        self._installer_cmd(
-            ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
-            title=f'Installing {whl.name}')
+            # running twine checks on the new file
+            builder.run(['-m', 'twine', 'check',
+                         os.path.join(dist_dir, '*'), '--strict'],
+                        title='Twine check',
+                        exception=TwineCheckFailed)
+
+            installer_venv = TempVenv()
+            self._close_us.append(installer_venv)
+            installer_python = installer_venv.__enter__()
+            self._installer = Runner(installer_python, at='installer venv')
+
+            self._installer.run('-m pip install --upgrade pip',
+                                title='Upgrading pip',
+                                exception=CannotInitializeEnvironment)
+
+            self._installer.run(
+                ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
+                title=f'Installing {whl.name}',
+                exception=FailedToInstallPackage)
 
     def cleanup(self, exc_type=None, exc_val=None, exc_tb=None):
         for x in reversed(self._close_us):
             x.__exit__(exc_type, exc_val, exc_tb)
-
-    def _installer_cmd(self, s: Union[str, List[str]], title=None, cwd=None):
-        args = s.split() if isinstance(s, str) else s
-        cmd = [self._installer_python] + args
-        print_command(cmd=cmd, at='installer venv', title=title)
-        check_call(cmd, cwd=cwd)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cleanup(exc_type, exc_val, exc_tb)
 
     def run_python_code(self, code: str):
         with TemporaryDirectory() as temp_current_dir:
-            self._installer_cmd(['-c', code],
+            self._installer.run(['-c', code],
                                 title="Running code (cwd is temp dir)",
-                                cwd=temp_current_dir)
+                                cwd=temp_current_dir,
+                                exception=CodeExecutionFailed)
