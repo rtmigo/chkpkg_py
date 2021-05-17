@@ -92,7 +92,7 @@ class Runner:
 
 
 class BuildCleaner:
-    """Removes "dist", "build" and "*.egg-info" directories if the did not
+    """Removes "dist", "build" and "*.egg-info" directories if they did not
     exist when the object was created."""
 
     def __init__(self, project_dir: Path):
