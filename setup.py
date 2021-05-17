@@ -18,10 +18,10 @@ constants: Any = load_module_dict(f'{name}/_constants.py')
 
 setup(
     name=name,
-    version=constants.__version__,
-    author=constants.__author__,
-    author_email=constants.__author_email__,
-    url=constants.__url__,
+    version=constants['__version__'],
+    author=constants['__author__'],
+    author_email=constants['__author_email__'],
+    url=constants['__url__'],
 
     python_requires='>=3.6',
     install_requires=[],
@@ -35,7 +35,7 @@ setup(
         .read_text(encoding='utf-8'),  # need encoding for Windows
     long_description_content_type='text/markdown',
 
-    license='MIT',
+    license=constants['__license__'],
 
     classifiers=[
         'Development Status :: 3 - Alpha',
