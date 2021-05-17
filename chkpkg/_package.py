@@ -172,10 +172,9 @@ class Package:
             print(f'Latest wheel: {whl}')
 
             # running twine checks on the new file
-            builder.run(['-m', 'twine', 'check', os.path.join(dist_dir, '*'),
-                         '--strict'],
+            builder.run(['-m', 'twine', 'check',
+                         os.path.join(dist_dir, '*'), '--strict'],
                         title='Twine check',
-                        # cwd=self.project_source_dir,
                         exception=TwineCheckFailed)
 
             installer_venv = TempVenv()
