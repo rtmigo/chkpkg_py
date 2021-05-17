@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Any
+
 from setuptools import setup
 
 
@@ -12,27 +14,28 @@ def load_module_dict(filename: str) -> dict:
 
 
 name = "chkpkg"
+constants = load_module_dict(f'{name}/_constants.py')
 
 setup(
     name=name,
-    version=load_module_dict(f'{name}/_constants.py')['__version__'],
-    author="Artёm IG",
-    author_email="ortemeo@gmail.com",
-    url='https://github.com/rtmigo/chkpkg_py#readme',
+    version=constants['__version__'],
+    author=constants['__author__'],
+    author_email=constants['__author_email__'],
+    url=constants['__url__'],
 
     python_requires='>=3.6',
     install_requires=[],
     packages=[name],
 
-    description="Checks Python packages intended to be published on PyPi",
+    description=constants['__summary__'],
 
-    keywords="package distribution wheel whl testing".split(),
+    keywords=constants['__keywords__'],
 
     long_description=(Path(__file__).parent / 'README.md')
         .read_text(encoding='utf-8'),  # need encoding for Windows
     long_description_content_type='text/markdown',
 
-    license='MIT',
+    license=constants['__license__'],
 
     classifiers=[
         'Development Status :: 3 - Alpha',
