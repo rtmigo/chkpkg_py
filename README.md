@@ -6,13 +6,13 @@ Checks a Python package intended to be published on PyPi:
 - сan we install a package from the newly built `.whl`?
 - can we import the installed package into the code?
 
-`chkpkg` can be used as part of CI pipeline. All configuration is done from a
-Python script, which is as cross-platform as Python itself.
+`chkpkg` can be used as part of CI pipeline. The check can be run from a `.py` 
+script, which is as cross-platform as Python itself.
 
 
 ---
 
-`chkpkg` was tested in Python 3.6, 3.9 and 3.10-beta.1 on macOS, Ubuntu and
+`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and
 Windows.
 
 # Install
@@ -36,8 +36,9 @@ imports the newly installed package and calls `myfunc()` from it. If at least
 one command returned a non-zero exit code, an exception would be thrown. 
 The absence of exceptions means that the package is fine.
 
-By default, we assume that the `setup.py` file is located in the current working 
-directory. You can specify a different path using the argument `Package(project_dir=...)` 
+By default, we assume that the `setup.py` or `setup.cfg` is located in the
+current working directory. You can specify a different path using the
+argument `Package(project_dir=...)`
 
 ## Steps
 
