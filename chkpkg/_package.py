@@ -34,6 +34,14 @@ def _venv_dir_to_executable(venv_dir: str) -> str:
 
 
 class TempVenv:
+    """Creates virtual environment in a temporary directory.
+    Removes the directory and the environment when `cleanup` is called.
+    Can be used as context manager:
+
+    with TempVenv() as python_exe:
+        run([python_exe, '-m', 'module'])
+    """
+
     def __init__(self):
         self._temp_dir: Optional[TemporaryDirectory] = None
         self._executable = None
@@ -49,17 +57,23 @@ class TempVenv:
     def venv_dir(self) -> str:
         return self._temp_dir.name
 
-    def __enter__(self):
+    def create(self):
         self._temp_dir = TemporaryDirectory()
         assert os.path.exists(self.venv_dir)
         assert os.path.isdir(self.venv_dir)
         print(f"Initializing venv in {self.venv_dir}")
         venv.create(env_dir=self.venv_dir, with_pip=True, clear=True)
+
+    def cleanup(self):
+        print(f"Removing temp venv dir {self._temp_dir.name}")
+        self._temp_dir.cleanup()
+
+    def __enter__(self) -> str:
+        self.create()
         return self.executable
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print(f"Removing temp venv dir {self._temp_dir.name}")
-        self._temp_dir.cleanup()
+        self.cleanup()
 
 
 def find_latest_wheel(parent_dir: Path) -> Path:
@@ -73,6 +87,9 @@ def find_latest_wheel(parent_dir: Path) -> Path:
 
 
 class Runner:
+    """Runs commands with the same executable file. Prints the commands
+    to the stdout with the same 'at' comments."""
+
     def __init__(self, exe, at):
         self.exe = exe
         self.at = at
