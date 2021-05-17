@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
 import shutil
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from subprocess import check_call, run as sprun, CalledProcessError, PIPE, \
@@ -103,7 +104,7 @@ class Runner:
         args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
 
-        cp = sprun(args_list, cwd=cwd, encoding="utf-8",
+        cp = sprun(args_list, cwd=cwd, encoding=sys.stdout.encoding,
                    stdout=PIPE, stderr=STDOUT,
                    universal_newlines=True)
 
