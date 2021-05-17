@@ -70,7 +70,7 @@ pkg.install()
 The `install` method:
 
 - Creates a temporary virtual environment capable of building `.whl` files
-    - Creates a distribution as a `.whl` file (`setup.py bdist_wheel`)
+    - Creates a distribution as a `.whl` file (`python -m build`)
     - Verifies the package source (`twine check --strict`)    
 - Creates another temporary virtual environment without preinstalled packages
     - Installs the package from the newly created `.whl` into the clean virtual
