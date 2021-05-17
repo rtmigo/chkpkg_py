@@ -6,3 +6,4 @@ __license__ = "MIT"
 __url__ = "https://github.com/rtmigo/chkpkg_py#readme",
 __summary__ = "Checks Python packages intended to be published on PyPi",
 __keywords__ = "package distribution wheel whl testing".split()
+
