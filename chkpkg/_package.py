@@ -108,7 +108,9 @@ class Runner:
                    stdout=PIPE, stderr=STDOUT,
                    universal_newlines=True)
 
-        print(cp.stdout.strip())
+        output = cp.stdout.rstrip()
+        if output:
+            print(output)
 
         if cp.returncode != 0:
             cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
