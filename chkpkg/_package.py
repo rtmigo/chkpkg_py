@@ -135,7 +135,8 @@ class Package:
         # directory.
         #
         # To avoid modifying the project dir, we create a temp directory
-        # for the build.
+        # for the build and use a little more complicated command
+        #
         with TemporaryDirectory() as temp_build_dir:
             dist_dir = os.path.join(temp_build_dir, "dist")
 
