@@ -92,14 +92,10 @@ class Runner:
 
 class Package:
 
-    def __init__(self, project_dir: Path = None):
+    def __init__(self, project_dir: Union[str, Path] = '.'):
         self._close_us = list()
         self._installer: Optional[Runner] = None
-
-        if project_dir:
-            self.project_source_dir = project_dir.absolute()
-        else:
-            self.project_source_dir = Path('.').absolute()
+        self.project_source_dir = Path(project_dir).absolute()
 
     def __enter__(self):
         self.init()
