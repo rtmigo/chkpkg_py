@@ -5,4 +5,3 @@ __author_email__ = "ortemeo@gmail.com"
 __license__ = "MIT"
 __summary__ = "Checks Python packages intended to be published on PyPi",
 __keywords__ = "package distribution wheel whl testing".split()
-__url__ = 'repository, https://github.com/rtmigo/chkpkg_py'
