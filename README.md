@@ -6,13 +6,16 @@ Checks a Python package intended to be published on PyPi:
 - сan we install a package from the newly built `.whl`?
 - can we import the installed package into the code?
 
+Thus, we check the correctness of `setup.py` or `setup.cfg`. The package code is
+not tested: this should be done by unit tests.
+
 `chkpkg` can be used as part of CI pipeline. The check can be run from a `.py`
 script, which is as cross-platform as Python itself.
 
 
 ---
 
-`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and Windows.
+`chkpkg` supports Python 3.6-3.9 on Linux, macOS and Windows.
 
 # Install
 
