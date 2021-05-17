@@ -96,7 +96,7 @@ class BuildCleaner:
     exist when the object was created."""
 
     def __init__(self, project_dir: Path):
-        self.project_dir = project_dir
+        self.project_dir = project_dir.absolute()
         self._build_existed = self.build_dir.exists()
         self._distr_existed = self.distr_dir.exists()
         self._eggs_existed = list(self.egg_infos)
