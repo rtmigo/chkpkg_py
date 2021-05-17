@@ -58,7 +58,7 @@ jobs:
       #- name: "Pyrel: testing chkpkg as a package"
         #if: matrix.os != 'windows-latest'
         run: |
-          python test_chkpkg_as_pkg.py.py
+          python test_chkpkg_as_pkg.py
 
   to-staging:
     needs: test
