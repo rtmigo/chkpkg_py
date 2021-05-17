@@ -11,10 +11,11 @@ Thus, we check the correctness of `setup.py` or `setup.cfg`.
 `chkpkg` can be used as part of CI pipeline. The check can be run from a `.py`
 script, which is as cross-platform as Python itself.
 
-
 ---
 
 `chkpkg` supports Python 3.6-3.9 on Linux, macOS and Windows.
+
+
 
 # Install
 
