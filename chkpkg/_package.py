@@ -191,14 +191,19 @@ class Package:
 
         builder = Runner(builder_python, at='builder venv')
 
+        # INSTALLING BUILD ####################################################
+
         builder.run('-m pip install --upgrade pip',
                     title='Upgrading pip',
                     exception=CannotInitializeEnvironment)
-        builder.run('-m pip install --upgrade build twine',
-                    title='Upgrading build and twine',
+        builder.run('-m pip install --upgrade build',
+                    title='Installing build',
                     exception=CannotInitializeEnvironment)
 
         with TemporaryDirectory() as temp_dist_dir:
+
+            # BUILDING ########################################################
+
             with BuildCleaner(self.project_source_dir):
                 builder.run(
                     ['-m', 'build', '--outdir', temp_dist_dir, '--wheel'],
@@ -210,11 +215,19 @@ class Package:
             whl = whl.absolute()
             print(f'Latest wheel: {whl}')
 
+            # TWINE CHECK #####################################################
+
+            builder.run('-m pip install --upgrade twine',
+                        title='Installing twine',
+                        exception=CannotInitializeEnvironment)
+
             # running twine checks on the new file
             builder.run(['-m', 'twine', 'check',
                          os.path.join(temp_dist_dir, '*'), '--strict'],
                         title='Twine check',
                         exception=TwineCheckFailed)
+
+            # TEST VENV #######################################################
 
             installer_venv = TempVenv()
             self._close_us.append(installer_venv)
