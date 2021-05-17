@@ -101,18 +101,6 @@ class Package:
         self.init()
         return self
 
-    @property
-    def _source_dist(self) -> Path:
-        return self.project_source_dir / "dist"
-
-    @property
-    def _source_build(self) -> Path:
-        return self.project_source_dir / "dist"
-
-    @property
-    def _source_eggs(self) -> List[Path]:
-        return list(self.project_source_dir.glob('*.egg-info'))
-
     def _dist_exists(self):
         return (self.project_source_dir / "dist").exists()
 
