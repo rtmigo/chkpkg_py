@@ -235,11 +235,15 @@ class Package:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cleanup(exc_type, exc_val, exc_tb)
 
-    def run_python_code(self, code: str):
+    def run_python_code(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
             cp = self._installer.run(['-c', code],
                                      title="Running code (cwd is temp dir)",
                                      cwd=temp_current_dir,
                                      exception=CodeExecutionFailed)
 
-            return cp.stdout
+            output = cp.stdout
+            if rstrip:
+                output = output.rstrip()
+
+            return output

@@ -89,7 +89,7 @@ You can also run some functions from the imported package and check the output.
 
 ``` python3
 output = pkg.run_python_code('import my_package; print(my_package.sum(2, 3))')
-assert output.strip() == "5"
+assert output == "5"
 ```
 
 ### Step 3: cleanup

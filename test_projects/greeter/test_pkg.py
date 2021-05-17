@@ -5,7 +5,7 @@ if __name__ == "__main__":
         pkg.run_python_code('import greeter')
 
         code = 'import greeter; greeter.say_hi()'
-        assert pkg.run_python_code(code).strip() == 'hi!'
+        assert pkg.run_python_code(code) == 'hi!'
 
         # how to print unicode on windows?..
         # code = 'import greeter; greeter.say_privet()'
