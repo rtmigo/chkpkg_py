@@ -30,8 +30,8 @@ with Package() as pkg:
     pkd.run_python_code('import mymodule')
 ```
 
-This code runs many commands in child processes. If at least one of them returns
-a non-zero exit code, an exception will be thrown.
+This code runs many commands as child processes. If any of them return 
+a non-zero exit code, an exception is thrown.
 
 ## Steps
 
@@ -54,7 +54,7 @@ finally:
     pkg.cleanup()    
 ```
 
-### Step 1: check, build, install
+### Step 1: build, verify, install
 
 ``` python3
 pkg.install()
@@ -63,8 +63,8 @@ pkg.install()
 The `install` method:
 
 - Creates a temporary virtual environment capable of building `.whl` files
-    - Verifies the package source with `twine check`
-    - Creates a distribution as a `.whl` file
+    - Creates a distribution as a `.whl` file (`setup bdist_wheel`)
+    - Verifies the package source (`twine check --strict`)    
 - Creates another temporary virtual environment without preinstalled packages
     - Installs the package from the newly created `.whl` into the clean virtual
       environment
