@@ -3,7 +3,8 @@
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from subprocess import check_call, CalledProcessError
+from subprocess import check_call, run as sprun, CalledProcessError, PIPE, \
+    STDOUT
 from typing import Optional, List, Union, Iterator
 import venv
 import os
@@ -14,10 +15,12 @@ from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
 
 def print_command(cmd, title, at):
     print()
-    print('=' * (80 - len(at) - 4) + ' ' + at + ' ==')
-    if title is not None:
-        print(title)
-    print(cmd)
+
+    print('== ' + title.upper() + ' ' +
+          ('=' * (80 - len(at) - len(title) - 4 - 4)) +
+          ' ' + at + ' ==')
+
+    print(' '.join(repr(arg) for arg in cmd))
     print('=' * 80)
     print()
 
@@ -99,13 +102,27 @@ class Runner:
         args_list = args.split() if isinstance(args, str) else args
         args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
-        try:
-            check_call(args_list, cwd=cwd)
-        except CalledProcessError as e:
+        # try:
+        cp = sprun(args_list, cwd=cwd, encoding="utf-8",
+                   stdout=PIPE, stderr=STDOUT,
+                   universal_newlines=True)
+
+        print(cp.stdout.strip())
+        # print(f"return code: {cp.returncode}")
+        if cp.returncode != 0:
+            cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
+                                     cp.stderr)
             if exception is None:
-                raise
+                raise cpe
             else:
-                raise exception(e)
+                raise exception(cpe)
+
+            # check_call(args_list, cwd=cwd)
+        # except CalledProcessError as e:
+        #     if exception is None:
+        #         raise
+        #     else:
+        #         raise exception(e)
 
 
 class BuildCleaner:
