@@ -13,7 +13,7 @@ script, which is as cross-platform as Python itself.
 
 ---
 
-`chkpkg` supports Python 3.6-3.9 on Linux, macOS and Windows.
+`chkpkg` supports Python 3.6+ on Linux, macOS and Windows.
 
 
 
