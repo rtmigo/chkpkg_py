@@ -113,6 +113,15 @@ class Package:
     def _source_eggs(self) -> List[Path]:
         return list(self.project_source_dir.glob('*.egg-info'))
 
+    def _dist_exists(self):
+        return (self.project_source_dir / "dist").exists()
+
+    def _build_exists(self):
+        return (self.project_source_dir / "build").exists()
+
+    def _eggs_count(self):
+        return sum(1 for _ in self.project_source_dir.glob('*.egg-info'))
+
     def init(self):
         tv = TempVenv()
         self._close_us.append(tv)
@@ -124,11 +133,9 @@ class Package:
                     title='Upgrading pip',
                     exception=CannotInitializeEnvironment)
 
-        # source_dist = self.project_source_dir/"dist"
-
-        dist_existed = self._source_dist.exists()
-        eggs_count_existed = len(self._source_eggs)
-        build_existed = self._source_build.exists()
+        dist_existed = self._dist_exists()
+        build_existed = self._build_exists()
+        eggs_count_existed = self._eggs_count()
 
         builder.run(
             '-m pip install setuptools wheel twine --force-reinstall',
@@ -154,10 +161,10 @@ class Package:
                         title='Building the .whl',
                         cwd=self.project_source_dir)
 
-            # check we did not create junk
-            assert self._source_dist.exists() == dist_existed
-            assert self._source_build.exists() == build_existed
-            assert len(self._source_eggs) == eggs_count_existed
+            # check we did not create known junk
+            assert self._dist_exists() == dist_existed
+            assert self._build_exists() == build_existed
+            assert self._eggs_count() == eggs_count_existed
 
             # finding the .whl file we just created
             whl = find_latest_wheel(Path(dist_dir))
