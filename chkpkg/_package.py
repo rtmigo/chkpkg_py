@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
 import shutil
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from subprocess import check_call, run as sprun, CalledProcessError, PIPE, \
@@ -102,13 +103,13 @@ class Runner:
         args_list = args.split() if isinstance(args, str) else args
         args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
-        # try:
-        cp = sprun(args_list, cwd=cwd, encoding="utf-8",
+
+        cp = sprun(args_list, cwd=cwd, encoding=sys.stdout.encoding,
                    stdout=PIPE, stderr=STDOUT,
                    universal_newlines=True)
 
         print(cp.stdout.strip())
-        # print(f"return code: {cp.returncode}")
+
         if cp.returncode != 0:
             cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
                                      cp.stderr)
@@ -117,12 +118,7 @@ class Runner:
             else:
                 raise exception(cpe)
 
-            # check_call(args_list, cwd=cwd)
-        # except CalledProcessError as e:
-        #     if exception is None:
-        #         raise
-        #     else:
-        #         raise exception(e)
+        return cp
 
 
 class BuildCleaner:
@@ -241,7 +237,9 @@ class Package:
 
     def run_python_code(self, code: str):
         with TemporaryDirectory() as temp_current_dir:
-            self._installer.run(['-c', code],
-                                title="Running code (cwd is temp dir)",
-                                cwd=temp_current_dir,
-                                exception=CodeExecutionFailed)
+            cp = self._installer.run(['-c', code],
+                                     title="Running code (cwd is temp dir)",
+                                     cwd=temp_current_dir,
+                                     exception=CodeExecutionFailed)
+
+            return cp.stdout
