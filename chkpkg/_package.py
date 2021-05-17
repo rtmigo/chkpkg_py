@@ -149,7 +149,7 @@ class Package:
                         title='Building the .whl',
                         cwd=self.project_source_dir)
 
-            # check we did not create known junk
+            # check we did not create new junk
             assert self._dist_exists() == dist_existed
             assert self._build_exists() == build_existed
             assert self._eggs_count() == eggs_count_existed
