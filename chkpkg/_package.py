@@ -4,8 +4,7 @@ import shutil
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from subprocess import check_call, run as sprun, CalledProcessError, PIPE, \
-    STDOUT
+from subprocess import run as run_process, CalledProcessError, PIPE, STDOUT
 from typing import Optional, List, Union, Iterator
 import venv
 import os
@@ -98,15 +97,15 @@ class Runner:
         self.exe = exe
         self.at = at
 
-    def run(self, args: Union[str, List[str]], title=None, cwd=None,
-            exception=None):
+    def run(self, args: Union[str, List[str]], title: str,
+            cwd=None, exception=None):
         args_list = args.split() if isinstance(args, str) else args
         args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
 
-        cp = sprun(args_list, cwd=cwd, encoding=sys.stdout.encoding,
-                   stdout=PIPE, stderr=STDOUT,
-                   universal_newlines=True)
+        cp = run_process(args_list, cwd=cwd, encoding=sys.stdout.encoding,
+                         stdout=PIPE, stderr=STDOUT,
+                         universal_newlines=True)
 
         output = cp.stdout.rstrip()
         if output:
@@ -201,7 +200,6 @@ class Package:
                     exception=CannotInitializeEnvironment)
 
         with TemporaryDirectory() as temp_dist_dir:
-
             # BUILDING ########################################################
 
             with BuildCleaner(self.project_source_dir):
