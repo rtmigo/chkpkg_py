@@ -14,7 +14,7 @@ def load_module_dict(filename: str) -> dict:
 
 
 name = "chkpkg"
-constants: Any = load_module_dict(f'{name}/_constants.py')
+constants = load_module_dict(f'{name}/_constants.py')
 
 setup(
     name=name,
