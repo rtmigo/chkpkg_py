@@ -62,8 +62,9 @@ class TempVenv:
         self._temp_dir.cleanup()
 
 
-def find_latest_wheel(dist_dir: Path) -> Optional[Path]:
-    files = [(f.stat().st_mtime, f) for f in dist_dir.glob('*.whl')]
+def find_latest_wheel(parent_dir: Path) -> Path:
+    """Finds *.whl file with the latest modification time"""
+    files = [(f.stat().st_mtime, f) for f in parent_dir.glob('*.whl')]
     if not files:
         raise FileNotFoundError(".whl file not found")
     max_mod_time = max((mt for mt, _ in files))
@@ -72,14 +73,14 @@ def find_latest_wheel(dist_dir: Path) -> Optional[Path]:
 
 
 class Runner:
-    def __init__(self, python, at):
-        self.python = python
+    def __init__(self, exe, at):
+        self.exe = exe
         self.at = at
 
     def run(self, args: Union[str, List[str]], title=None, cwd=None,
             exception=None):
         args_list = args.split() if isinstance(args, str) else args
-        args_list = [self.python] + args_list
+        args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
         try:
             check_call(args_list, cwd=cwd)
@@ -91,6 +92,13 @@ class Runner:
 
 
 class Package:
+    """During initialization, this object creates a .whl distribution
+    and installs the packages from the distribution into a test virtual
+    environment.
+
+    After that, using the methods of the object, we can execute commands
+    in the test environment, checking that the packages were
+    installed correctly."""
 
     def __init__(self, project_dir: Union[str, Path] = '.'):
         self._close_us = list()
