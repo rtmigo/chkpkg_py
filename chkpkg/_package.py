@@ -125,10 +125,9 @@ class Package:
         # for the build.
         with TemporaryDirectory() as temp_build_dir:
             dist_dir = os.path.join(temp_build_dir, "dist")
-            egg_base_dir = temp_build_dir
 
             cmd = ['setup.py',
-                   'egg_info', '--egg-base', egg_base_dir,
+                   'egg_info', '--egg-base', temp_build_dir,
                    'sdist', '--dist-dir', dist_dir,  # do we need this?
                    'bdist_wheel', '--dist-dir', dist_dir,
                    'clean', '--all']
