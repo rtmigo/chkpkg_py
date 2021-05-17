@@ -62,8 +62,8 @@ class TempVenv:
         self._temp_dir.cleanup()
 
 
-def find_latest_wheel(project_root: Path) -> Optional[Path]:
-    files = [(f.stat().st_mtime, f) for f in project_root.glob('dist/*.whl')]
+def find_latest_wheel(dist_dir: Path) -> Optional[Path]:
+    files = [(f.stat().st_mtime, f) for f in dist_dir.glob('*.whl')]
     if not files:
         raise FileNotFoundError(".whl file not found")
     max_mod_time = max((mt for mt, _ in files))
@@ -117,34 +117,51 @@ class Package:
             title='Installing building requirements',
             exception=CannotInitializeEnvironment)
 
-        # building the "dist" directory with .whl file inside
-        # creates "build", "dist", "*.egg-info"
-        builder.run('setup.py sdist bdist_wheel',
-                    title='Building the .whl',
-                    cwd=self.project_source_dir)
+        # the basic command is 'setup.py sdist bdist_wheel'.
+        # But it creates ./build, ./dist and ./*.egg-info in the project
+        # directory.
+        #
+        # To avoid modifying the project dir, we create a temp directory
+        # for the build.
+        with TemporaryDirectory() as temp_build_dir:
+            dist_dir = os.path.join(temp_build_dir, "dist")
+            egg_base_dir = temp_build_dir
 
-        whl = find_latest_wheel(self.project_source_dir)
-        whl = whl.absolute()
-        print(f'Latest wheel: {whl}')
+            cmd = ['setup.py',
+                   'egg_info', '--egg-base', egg_base_dir,
+                   'sdist', '--dist-dir', dist_dir,  # do we need this?
+                   'bdist_wheel', '--dist-dir', dist_dir,
+                   'clean', '--all']
 
-        builder.run('-m twine check ./dist/* --strict',
-                    title='Twine check',
-                    cwd=self.project_source_dir,
-                    exception=TwineCheckFailed)
+            builder.run(cmd,
+                        title='Building the .whl',
+                        cwd=self.project_source_dir)
 
-        installer_venv = TempVenv()
-        self._close_us.append(installer_venv)
-        installer_python = installer_venv.__enter__()
-        self._installer = Runner(installer_python, at='installer venv')
+            # finding the .whl file we just created
+            whl = find_latest_wheel(Path(dist_dir))
+            whl = whl.absolute()
+            print(f'Latest wheel: {whl}')
 
-        self._installer.run('-m pip install --upgrade pip',
-                            title='Upgrading pip',
-                            exception=CannotInitializeEnvironment)
+            # running twine checks on the new file
+            builder.run(['-m', 'twine', 'check', os.path.join(dist_dir, '*'),
+                         '--strict'],
+                        title='Twine check',
+                        # cwd=self.project_source_dir,
+                        exception=TwineCheckFailed)
 
-        self._installer.run(
-            ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
-            title=f'Installing {whl.name}',
-            exception=FailedToInstallPackage)
+            installer_venv = TempVenv()
+            self._close_us.append(installer_venv)
+            installer_python = installer_venv.__enter__()
+            self._installer = Runner(installer_python, at='installer venv')
+
+            self._installer.run('-m pip install --upgrade pip',
+                                title='Upgrading pip',
+                                exception=CannotInitializeEnvironment)
+
+            self._installer.run(
+                ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
+                title=f'Installing {whl.name}',
+                exception=FailedToInstallPackage)
 
     def cleanup(self, exc_type=None, exc_val=None, exc_tb=None):
         for x in reversed(self._close_us):
