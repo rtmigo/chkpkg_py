@@ -1,21 +1,26 @@
 # SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
 
-class TwineCheckFailed(BaseException):
+class ChkpkgException(BaseException):
     def __init__(self, e):
         self.inner = e
 
 
-class FailedToInstallPackage(BaseException):
+class TwineCheckFailed(ChkpkgException):
     def __init__(self, e):
-        self.inner = e
+        super().__init__(e)
 
 
-class CannotInitializeEnvironment(BaseException):
+class FailedToInstallPackage(ChkpkgException):
     def __init__(self, e):
-        self.inner = e
+        super().__init__(e)
 
 
-class CodeExecutionFailed(BaseException):
+class CannotInitializeEnvironment(ChkpkgException):
     def __init__(self, e):
-        self.inner = e
+        super().__init__(e)
+
+
+class CodeExecutionFailed(ChkpkgException):
+    def __init__(self, e):
+        super().__init__(e)

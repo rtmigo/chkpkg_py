@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
 import shutil
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from subprocess import check_call, CalledProcessError
+from subprocess import check_call, run as sprun, CalledProcessError, PIPE, \
+    STDOUT
 from typing import Optional, List, Union, Iterator
 import venv
 import os
@@ -14,10 +16,12 @@ from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
 
 def print_command(cmd, title, at):
     print()
-    print('=' * (80 - len(at) - 4) + ' ' + at + ' ==')
-    if title is not None:
-        print(title)
-    print(cmd)
+
+    print('== ' + title.upper() + ' ' +
+          ('=' * (80 - len(at) - len(title) - 4 - 4)) +
+          ' ' + at + ' ==')
+
+    print(' '.join(repr(arg) for arg in cmd))
     print('=' * 80)
     print()
 
@@ -34,6 +38,14 @@ def _venv_dir_to_executable(venv_dir: str) -> str:
 
 
 class TempVenv:
+    """Creates virtual environment in a temporary directory.
+    Removes the directory and the environment when `cleanup` is called.
+    Can be used as context manager:
+
+    with TempVenv() as python_exe:
+        run([python_exe, '-m', 'module'])
+    """
+
     def __init__(self):
         self._temp_dir: Optional[TemporaryDirectory] = None
         self._executable = None
@@ -49,17 +61,23 @@ class TempVenv:
     def venv_dir(self) -> str:
         return self._temp_dir.name
 
-    def __enter__(self):
+    def create(self):
         self._temp_dir = TemporaryDirectory()
         assert os.path.exists(self.venv_dir)
         assert os.path.isdir(self.venv_dir)
         print(f"Initializing venv in {self.venv_dir}")
         venv.create(env_dir=self.venv_dir, with_pip=True, clear=True)
+
+    def cleanup(self):
+        print(f"Removing temp venv dir {self._temp_dir.name}")
+        self._temp_dir.cleanup()
+
+    def __enter__(self) -> str:
+        self.create()
         return self.executable
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print(f"Removing temp venv dir {self._temp_dir.name}")
-        self._temp_dir.cleanup()
+        self.cleanup()
 
 
 def find_latest_wheel(parent_dir: Path) -> Path:
@@ -73,6 +91,9 @@ def find_latest_wheel(parent_dir: Path) -> Path:
 
 
 class Runner:
+    """Runs commands with the same executable file. Prints the commands
+    to the stdout with the same 'at' comments."""
+
     def __init__(self, exe, at):
         self.exe = exe
         self.at = at
@@ -82,17 +103,26 @@ class Runner:
         args_list = args.split() if isinstance(args, str) else args
         args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
-        try:
-            check_call(args_list, cwd=cwd)
-        except CalledProcessError as e:
+
+        cp = sprun(args_list, cwd=cwd, encoding=sys.stdout.encoding,
+                   stdout=PIPE, stderr=STDOUT,
+                   universal_newlines=True)
+
+        print(cp.stdout.strip())
+
+        if cp.returncode != 0:
+            cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
+                                     cp.stderr)
             if exception is None:
-                raise
+                raise cpe
             else:
-                raise exception(e)
+                raise exception(cpe)
+
+        return cp
 
 
 class BuildCleaner:
-    """Removes "dist", "build" and "*.egg-info" directories if the did not
+    """Removes "dist", "build" and "*.egg-info" directories if they did not
     exist when the object was created."""
 
     def __init__(self, project_dir: Path):
@@ -205,9 +235,15 @@ class Package:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cleanup(exc_type, exc_val, exc_tb)
 
-    def run_python_code(self, code: str):
+    def run_python_code(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
-            self._installer.run(['-c', code],
-                                title="Running code (cwd is temp dir)",
-                                cwd=temp_current_dir,
-                                exception=CodeExecutionFailed)
+            cp = self._installer.run(['-c', code],
+                                     title="Running code (cwd is temp dir)",
+                                     cwd=temp_current_dir,
+                                     exception=CodeExecutionFailed)
+
+            output = cp.stdout
+            if rstrip:
+                output = output.rstrip()
+
+            return output

@@ -6,14 +6,13 @@ Checks a Python package intended to be published on PyPi:
 - сan we install a package from the newly built `.whl`?
 - can we import the installed package into the code?
 
-`chkpkg` can be used as part of CI pipeline. The check can be run from a `.py` 
+`chkpkg` can be used as part of CI pipeline. The check can be run from a `.py`
 script, which is as cross-platform as Python itself.
 
 
 ---
 
-`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and
-Windows.
+`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and Windows.
 
 # Install
 
@@ -31,10 +30,11 @@ with Package() as pkg:
     
 print("Package is OK!")
 ```
-This code creates a distribution, installs the package from that distribution, 
-imports the newly installed package and calls `myfunc()` from it. If at least 
-one command returned a non-zero exit code, an exception would be thrown. 
-The absence of exceptions means that the package is fine.
+
+This code creates a distribution, installs the package from that distribution,
+imports the newly installed package and calls `myfunc()` from it. If at least
+one command returned a non-zero exit code, an exception would be thrown. The
+absence of exceptions means that the package is fine.
 
 By default, we assume that the `setup.py` or `setup.cfg` is located in the
 current working directory. You can specify a different path using the
@@ -71,7 +71,7 @@ The `install` method:
 
 - Creates a temporary virtual environment capable of building `.whl` files
     - Creates a distribution as a `.whl` file (`python -m build`)
-    - Verifies the package source (`twine check --strict`)    
+    - Verifies the package source (`twine check --strict`)
 - Creates another temporary virtual environment without preinstalled packages
     - Installs the package from the newly created `.whl` into the clean virtual
       environment
@@ -85,14 +85,12 @@ pkg.run_python_code('import my_package')
 The `run_python_code` method allows you to check that the package is installed
 and can be imported without errors.
 
-You can also run some functions from the imported package.
+You can also run some functions from the imported package and check the output.
 
 ``` python3
-pkg.run_python_code('import my_package; my_package.func()')
+output = pkg.run_python_code('import my_package; print(my_package.sum(2, 3))')
+assert output == "5"
 ```
-
-The main intrigue here is whether the code will execute successfully (with exit
-code 0) or will an error occur (with non-zero exit codes).
 
 ### Step 3: cleanup
 
