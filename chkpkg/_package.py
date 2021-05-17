@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
-
+import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from subprocess import check_call, CalledProcessError
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Iterator
 import venv
 import os
 
@@ -91,6 +91,49 @@ class Runner:
                 raise exception(e)
 
 
+class BuildCleaner:
+    """Removes "dist", "build" and "*.egg-info" directories if the did not
+    exist when the object was created."""
+
+    def __init__(self, project_dir: Path):
+        self.project_dir = project_dir
+        self._build_existed = self.build_dir.exists()
+        self._distr_existed = self.distr_dir.exists()
+        self._eggs_existed = list(self.egg_infos)
+
+    @property
+    def build_dir(self) -> Path:
+        return self.project_dir / "build"
+
+    @property
+    def distr_dir(self) -> Path:
+        return self.project_dir / "distr"
+
+    @property
+    def egg_infos(self) -> Iterator[Path]:
+        return self.project_dir.glob('*.egg-info')
+
+    def cleanup(self):
+
+        def remove(p: Path):
+            shutil.rmtree(p, ignore_errors=True)
+
+        if not self._build_existed:
+            remove(self.build_dir)
+        if not self._distr_existed:
+            remove(self.distr_dir)
+
+        for egg in self.egg_infos:
+            if egg not in self._eggs_existed:
+                remove(egg)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cleanup()
+
+
 class Package:
     """During initialization, this object creates a .whl distribution
     and installs the packages from the distribution into a test virtual
@@ -109,15 +152,6 @@ class Package:
         self.init()
         return self
 
-    def _dist_exists(self):
-        return (self.project_source_dir / "dist").exists()
-
-    def _build_exists(self):
-        return (self.project_source_dir / "build").exists()
-
-    def _eggs_count(self):
-        return sum(1 for _ in self.project_source_dir.glob('*.egg-info'))
-
     def init(self):
         tv = TempVenv()
         self._close_us.append(tv)
@@ -128,49 +162,25 @@ class Package:
         builder.run('-m pip install --upgrade pip',
                     title='Upgrading pip',
                     exception=CannotInitializeEnvironment)
+        builder.run('-m pip install --upgrade build twine',
+                    title='Upgrading build and twine',
+                    exception=CannotInitializeEnvironment)
 
-        dist_existed = self._dist_exists()
-        build_existed = self._build_exists()
-        eggs_count_existed = self._eggs_count()
-
-        builder.run(
-            '-m pip install setuptools wheel twine --force-reinstall',
-            title='Installing building requirements',
-            exception=CannotInitializeEnvironment)
-
-        # the basic command is 'setup.py sdist bdist_wheel'.
-        # But it creates ./build, ./dist and ./*.egg-info in the project
-        # directory.
-        #
-        # To avoid modifying the project dir, we create a temp directory
-        # for the build and use a little more complicated command
-        #
-        with TemporaryDirectory() as temp_build_dir:
-            dist_dir = os.path.join(temp_build_dir, "dist")
-
-            cmd = ['setup.py',
-                   'egg_info', '--egg-base', temp_build_dir,
-                   'sdist', '--dist-dir', dist_dir,  # do we need this?
-                   'bdist_wheel', '--dist-dir', dist_dir,
-                   'clean', '--all']
-
-            builder.run(cmd,
-                        title='Building the .whl',
-                        cwd=self.project_source_dir)
-
-            # check we did not create new junk
-            assert self._dist_exists() == dist_existed
-            assert self._build_exists() == build_existed
-            assert self._eggs_count() == eggs_count_existed
+        with TemporaryDirectory() as temp_dist_dir:
+            with BuildCleaner(self.project_source_dir):
+                builder.run(
+                    ['-m', 'build', '--outdir', temp_dist_dir, '--wheel'],
+                    title='Building the .whl',
+                    cwd=self.project_source_dir)
 
             # finding the .whl file we just created
-            whl = find_latest_wheel(Path(dist_dir))
+            whl = find_latest_wheel(Path(temp_dist_dir))
             whl = whl.absolute()
             print(f'Latest wheel: {whl}')
 
             # running twine checks on the new file
             builder.run(['-m', 'twine', 'check',
-                         os.path.join(dist_dir, '*'), '--strict'],
+                         os.path.join(temp_dist_dir, '*'), '--strict'],
                         title='Twine check',
                         exception=TwineCheckFailed)
 

@@ -20,7 +20,7 @@ setup(
     version=constants['__version__'],
     author=constants['__author__'],
     author_email=constants['__author_email__'],
-    url='https://github.com/rtmigo/chkpkg_py#readme',
+    url=constants['__url__'],
 
     python_requires='>=3.6',
     install_requires=[],
