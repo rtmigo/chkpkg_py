@@ -103,7 +103,7 @@ class Runner:
         self.at = at
 
     def run(self, args: Union[str, List[str]], title: str,
-            split_args = True,
+            exact_args = True,
             cwd: Union[Path, str] = None,
             exception: Type[BaseException] = None,
             # stdin: io.BytesIO = None,
@@ -111,7 +111,7 @@ class Runner:
             shell: bool = False,
             input: bytes = None
             ):
-        args_list = args.split() if isinstance(args, str) and split_args else args
+        args_list = args.split() if isinstance(args, str) and exact_args else args
         if not shell:
             args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
@@ -312,7 +312,7 @@ class Package:
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
             cp = self._installer.run(code,
-                                     split_args=False,
+                                     exact_args=False,
                                      title="Running Bash code (cwd is temp dir)",
                                      cwd=temp_current_dir,
                                      shell=True, executable='/bin/bash',
@@ -333,6 +333,7 @@ class Package:
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
             cp = self._installer.run(code,
+                                     exact_args=False,
                                      title="Running shell code (cwd is temp dir)",
                                      cwd=temp_current_dir,
                                      shell=True,  # executable='/bin/bash',
