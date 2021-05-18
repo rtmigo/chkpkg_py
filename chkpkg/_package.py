@@ -349,22 +349,25 @@ class Package:
     def _run_cmdexe_code(self, code: str, rstrip: bool = True):
         """Runs command in cmd.exe"""
         with TemporaryDirectory() as temp_current_dir:
-            temp_bat_file = Path(temp_current_dir) / "commands.bat"
-            #output_file = Path(temp_current_dir) / "output.txt"
-
+            # file that activates the venv
             activate_bat = os.path.join(
                 self.installer_venv.venv_dir,
                 'Scripts',
                 'activate.bat')
+            if not os.path.exists(activate_bat):
+                raise AssertionError("activate.bat not found")
 
-            temp_bat_text = '\n'.join([f"CALL {activate_bat}",
-                                       code])
+            # temp file with commands to run
+            temp_bat_file = Path(temp_current_dir) / "_chkpkg_runme.bat"
 
-            #temp_bat_file.write_text(temp_bat_text)
+            temp_bat_file.write_text(
+                '\n'.join([f"CALL {activate_bat}",
+                           code]
+                          )
 
             # todo param /u formats output as unicode?
             cp = self._installer.run(
-                ["cmd.exe", "/q", "/c", temp_bat_text],
+                ["cmd.exe", "/q", "/c", str(temp_bat_file)],
                 exact_args=True,
                 title="Running code in cmd.exe (cwd is temp dir)",
                 cwd=temp_current_dir,
