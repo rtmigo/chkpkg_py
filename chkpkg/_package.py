@@ -363,9 +363,9 @@ class Package:
 
             # todo param /u formats output as unicode?
             cp = self._installer.run(
-                ["cmd.exe", "/q", "/c", temp_bat_file],
+                ["cmd.exe", "/q", "/c", str(temp_bat_file)],
                 exact_args=True,
-                title="Running shell code (cwd is temp dir)",
+                title="Running code in cmd.exe (cwd is temp dir)",
                 cwd=temp_current_dir,
                 shell=True,  # executable='/bin/bash',
                 # input=code,
