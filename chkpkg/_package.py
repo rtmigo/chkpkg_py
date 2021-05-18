@@ -95,37 +95,35 @@ def find_latest_wheel(parent_dir: Path) -> Path:
 
 
 class Runner:
-    """Runs commands with the same executable file. Prints the commands
-    to the stdout with the same 'at' comments."""
+    """Runs commands with the same executable file (until reformat_args=False).
+    Prints the commands to the stdout with the same 'at' comments."""
 
     def __init__(self, exe, at):
         self.exe = exe
         self.at = at
 
-    def run(self, args: Union[str, List[str]], title: str,
-            exact_args: bool = False,
+    def run(self,
+            args: Union[str, List[str]],
+            title: str,
+            reformat_args: bool = True,
             cwd: Union[Path, str] = None,
             exception: Type[BaseException] = None,
-            # stdin: io.BytesIO = None,
             executable: str = None,
-            shell: bool = False,
-            input: bytes = None):
+            shell: bool = False):
 
-        if exact_args:
-            args_list = args
-        else:
+        if reformat_args:
             args_list = args.split() if isinstance(args, str) else args
             args_list = [self.exe] + args_list
+        else:
+            args_list = args
+
         print_command(cmd=args_list, at=self.at, title=title)
 
         cp = run_process(args_list, cwd=cwd, encoding=sys.stdout.encoding,
                          stdout=PIPE, stderr=STDOUT,
                          executable=executable,
                          shell=shell,
-                         input=input,
-                         universal_newlines=True,
-                         # stdin=stdin
-                         )
+                         universal_newlines=True)
 
         output = cp.stdout.rstrip()
         if output:
@@ -308,41 +306,18 @@ class Package:
             code = '\n'.join(["#!/bin/bash",
                               "set -e",
                               f'source "{activate}"',
-                              # activate,
                               code])
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
-            cp = self._installer.run(code,
-                                     exact_args=True,
-                                     title="Running Bash code (cwd is temp dir)",
-                                     cwd=temp_current_dir,
-                                     shell=True, executable='/bin/bash',
-                                     # input=code,
-                                     exception=CodeExecutionFailed)
-
-            return self._output(cp, rstrip)
-
-    def _run_windows_shell_code_1(self, code: str, rstrip: bool = True):
-        with TemporaryDirectory() as temp_current_dir:
-            activate_bat = os.path.join(
-                self.installer_venv.venv_dir,
-                'Scripts',
-                'activate.bat')
-
-            code = '\r\n'.join([f'{activate_bat}',
-                                # activate,
-                                code, ''])
-
-            # we need executable='/bin/bash' for Ubuntu 18.04, it will run
-            # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
-            cp = self._installer.run(code,
-                                     exact_args=True,
-                                     title="Running shell code (cwd is temp dir)",
-                                     cwd=temp_current_dir,
-                                     shell=True,  # executable='/bin/bash',
-                                     # input=code,
-                                     exception=CodeExecutionFailed)
+            cp = self._installer.run(
+                code,
+                reformat_args=False,
+                title="Running Bash code (cwd is temp dir)",
+                cwd=temp_current_dir,
+                shell=True, executable='/bin/bash',
+                # input=code,
+                exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
 
@@ -360,23 +335,17 @@ class Package:
             temp_bat_file = Path(temp_current_dir) / "_run_cmdexe_code.bat"
             temp_bat_file.write_text(
                 '\n'.join([f"CALL {activate_bat}",
-                           code])
-            )
+                           code]))
 
             # todo param /u formats output as unicode?
             cp = self._installer.run(
                 ["cmd.exe", "/q", "/c", str(temp_bat_file)],
-                exact_args=True,
+                reformat_args=False,
                 title="Running code in cmd.exe (cwd is temp dir)",
                 cwd=temp_current_dir,
                 shell=True,  # executable='/bin/bash',
                 # input=code,
                 exception=CodeExecutionFailed)
-
-            # out = output_file.read_text(sys.stdout.encoding)
-            # if rstrip:
-            # out = out.rstrip()
-            # return out
 
             return self._output(cp, rstrip)
 
