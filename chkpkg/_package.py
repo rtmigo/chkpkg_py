@@ -346,20 +346,22 @@ class Package:
 
             return self._output(cp, rstrip)
 
-    def _run_windows_shell_code(self, code: str, rstrip: bool = True):
+    def _run_cmdexe_code(self, code: str, rstrip: bool = True):
+        """Runs command in cmd.exe"""
         with TemporaryDirectory() as temp_current_dir:
-            temp_bat_file = Path(temp_current_dir) / "commands.bat"
-            output_file = Path(temp_current_dir) / "output.txt"
-
+            # file that activates the venv
             activate_bat = os.path.join(
                 self.installer_venv.venv_dir,
                 'Scripts',
                 'activate.bat')
+            assert os.path.exists(activate_bat), "activate.bat not found"
 
-            temp_bat_text = '\n'.join([f"CALL {activate_bat}",
-                                       code])
-
-            temp_bat_file.write_text(temp_bat_text)
+            # temp file with commands to run
+            temp_bat_file = Path(temp_current_dir) / "_run_cmdexe_code.bat"
+            temp_bat_file.write_text(
+                '\n'.join([f"CALL {activate_bat}",
+                           code])
+            )
 
             # todo param /u formats output as unicode?
             cp = self._installer.run(
@@ -381,7 +383,7 @@ class Package:
     def run_shell_code(self, code: str, rstrip: bool = True) -> str:
 
         if os.name == 'nt':
-            method = self._run_windows_shell_code
+            method = self._run_cmdexe_code
         else:
             method = self._run_bash_code
 
