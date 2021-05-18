@@ -112,9 +112,9 @@ class Runner:
             input: bytes = None):
 
         if exact_args:
-            args_list = [args] if isinstance(args, str) else args
+            args_list = args
         else:
-            args_list = args.split() if isinstance(args,str) else args
+            args_list = args.split() if isinstance(args, str) else args
             args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
 
@@ -323,7 +323,7 @@ class Package:
 
             return self._output(cp, rstrip)
 
-    def _run_windows_shell_code(self, code: str, rstrip: bool = True):
+    def _run_windows_shell_code_1(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
             activate_bat = os.path.join(
                 self.installer_venv.venv_dir,
@@ -331,8 +331,8 @@ class Package:
                 'activate.bat')
 
             code = '\r\n'.join([f'{activate_bat}',
-                              # activate,
-                              code, ''])
+                                # activate,
+                                code, ''])
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
@@ -345,6 +345,38 @@ class Package:
                                      exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
+
+    def _run_windows_shell_code_1(self, code: str, rstrip: bool = True):
+        with TemporaryDirectory() as temp_current_dir:
+            temp_bat_file = Path(temp_current_dir) / "commands.bat"
+            output_file = Path(temp_current_dir) / "output.txt"
+
+            activate_bat = os.path.join(
+                self.installer_venv.venv_dir,
+                'Scripts',
+                'activate.bat')
+
+            temp_bat_text = '\n'.join([activate_bat,
+                                       code])
+
+            temp_bat_file.write_text(temp_bat_text)
+
+            # we need executable='/bin/bash' for Ubuntu 18.04, it will run
+            # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
+            cp = self._installer.run(f"{temp_bat_file} > {output_file}",
+                                     exact_args=True,
+                                     title="Running shell code (cwd is temp dir)",
+                                     cwd=temp_current_dir,
+                                     shell=True,  # executable='/bin/bash',
+                                     # input=code,
+                                     exception=CodeExecutionFailed)
+
+            out = output_file.read_text(sys.stdout.encoding)
+            if rstrip:
+                out = out.rstrip()
+            return out
+
+            #return self._output(cp, rstrip)
 
     def run_shell_code(self, code: str, rstrip: bool = True) -> str:
 
