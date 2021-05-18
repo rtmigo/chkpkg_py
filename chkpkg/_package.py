@@ -354,16 +354,14 @@ class Package:
                 self.installer_venv.venv_dir,
                 'Scripts',
                 'activate.bat')
-            if not os.path.exists(activate_bat):
-                raise AssertionError("activate.bat not found")
+            assert os.path.exists(activate_bat), "activate.bat not found"
 
             # temp file with commands to run
-            temp_bat_file = Path(temp_current_dir) / "_chkpkg_runme.bat"
-
+            temp_bat_file = Path(temp_current_dir) / "_run_cmdexe_code.bat"
             temp_bat_file.write_text(
                 '\n'.join([f"CALL {activate_bat}",
-                           code]
-                          )
+                           code])
+            )
 
             # todo param /u formats output as unicode?
             cp = self._installer.run(
