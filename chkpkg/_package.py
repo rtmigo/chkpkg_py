@@ -87,11 +87,13 @@ class TempVenv:
         self._executable = None
 
     @property
-    def executable(self):
-        if self._executable is None:
-            self._executable = _venv_dir_to_executable(self.venv_dir_str)
-            print(f"The python executable: {self._executable}")
-        return self._executable
+    def executable_str(self) -> str:
+        warnings.warn("Obsolete", DeprecationWarning)
+        return str(self.paths.executable)
+        # if self._executable is None:
+        #     self._executable = _venv_dir_to_executable(self.venv_dir_str)
+        #     print(f"The python executable: {self._executable}")
+        # return self._executable
 
     @property
     def venv_dir_str(self) -> str:
@@ -114,7 +116,7 @@ class TempVenv:
 
     def __enter__(self) -> str:
         self.create()
-        return self.executable
+        return self.executable_str
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cleanup()
