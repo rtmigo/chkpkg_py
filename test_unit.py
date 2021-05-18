@@ -17,4 +17,3 @@ check_call([sys.executable, 'test_pkg.py'], cwd=tests/'greeter')
 splitter()
 
 check_call([sys.executable, 'test_pkg.py'], cwd=tests/'invalid_metadata')
-
