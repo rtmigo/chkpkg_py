@@ -62,7 +62,7 @@ finally:
     pkg.cleanup()    
 ```
 
-### Step 1: build, verify, install
+### Step 1: Build, Verify, Install
 
 ``` python3
 pkg.install()
@@ -77,13 +77,13 @@ The `install` method:
     - Installs the package from the newly created `.whl` into the clean virtual
       environment
 
-### Step 2: import, run
+### Step 2: Import, Run
 
 ``` python3
 pkg.run_python_code('import my_package')
 ```
 
-The `run_python_code` method allows you to check that the package is installed
+The `run_python` method allows you to check that the package is installed
 and can be imported without errors.
 
 You can also run some functions from the imported package and check the output.
@@ -93,7 +93,20 @@ output = pkg.run_python_code('import my_package; print(my_package.sum(2, 3))')
 assert output == "5"
 ```
 
-### Step 3: cleanup
+If the package must be installed as a CLI program, this can be tested with 
+the `run_shell_code`. This function calls `cmd.exe` on Windows and `bash` 
+on other systems.
+
+``` python3
+output = pkg.run_shell_code('my_package_cli --version')
+assert output[0].isdigit()
+```
+
+
+
+
+
+### Step 3: Cleanup
 
 ``` python3
 pkg.cleanup()
