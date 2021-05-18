@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: MIT
 import os
 import sys
-import venv
-import warnings
 from pathlib import Path
 from subprocess import run as run_process, CalledProcessError, PIPE, STDOUT, \
     CompletedProcess
@@ -13,113 +11,20 @@ from typing import Optional, List, Union, Type
 from ._cleaner import BuildCleaner
 from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
     CannotInitializeEnvironment, CodeExecutionFailed
+from ._venvs import TempVenv
 
 
 def print_command(cmd: Union[str, List[str]], title: str, at: str):
     print()
-
     print('== ' + title.upper() + ' ' +
           ('=' * (80 - len(at) - len(title) - 4 - 4)) +
           ' ' + at + ' ==')
-
     if isinstance(cmd, str):
         print(cmd)
     else:
         print(' '.join(repr(arg) for arg in cmd))
     print('=' * 80)
     print()
-
-
-class VenvPaths:
-    def __init__(self, venv_dir: Union[Path, str]):
-        self.venv_dir = Path(venv_dir)
-
-    @property
-    def executable(self):
-        p = self.venv_dir / 'bin' / 'python'
-        if p.exists():
-            return p
-        p = self.venv_dir / 'Scripts' / 'python.exe'
-        if p.exists():
-            return p
-        raise FileNotFoundError(
-            f"Cannot find Python executable inside {self.venv_dir}")
-
-    @property
-    def windows_activate_bat(self):
-        p = self.venv_dir / 'Scripts' / 'activate.bat'
-        if not p.exists():
-            raise FileNotFoundError
-        return p
-
-    @property
-    def bash_activate(self):
-        p = self.venv_dir / 'bin' / 'activate'
-        if not p.exists():
-            raise FileNotFoundError
-        return p
-
-
-
-def _venv_dir_to_executable(venv_dir: str) -> str:
-    warnings.warn("Obsolete", DeprecationWarning)
-    p = os.path.join(venv_dir, 'bin', 'python')
-    if os.path.exists(p):
-        return p
-    p = os.path.join(venv_dir, 'Scripts', 'python.exe')
-    if os.path.exists(p):
-        return p
-    raise FileNotFoundError(
-        f"Cannot find Python executable inside {venv_dir}")
-
-
-class TempVenv:
-    """Creates virtual environment in a temporary directory.
-    Removes the directory and the environment when `cleanup` is called.
-    Can be used as context manager:
-
-    with TempVenv() as python_exe:
-        run([python_exe, '-m', 'module'])
-    """
-
-    def __init__(self):
-        self._temp_dir: Optional[TemporaryDirectory] = None
-        self._executable = None
-
-    @property
-    def executable_str(self) -> str:
-        warnings.warn("Obsolete", DeprecationWarning)
-        return str(self.paths.executable)
-        # if self._executable is None:
-        #     self._executable = _venv_dir_to_executable(self.venv_dir_str)
-        #     print(f"The python executable: {self._executable}")
-        # return self._executable
-
-    @property
-    def venv_dir_str(self) -> str:
-        return self._temp_dir.name
-
-    @property
-    def paths(self) -> VenvPaths:
-        return VenvPaths(self._temp_dir.name)
-
-    def create(self):
-        self._temp_dir = TemporaryDirectory()
-        assert os.path.exists(self.venv_dir_str)
-        assert os.path.isdir(self.venv_dir_str)
-        print(f"Initializing venv in {self.venv_dir_str}")
-        venv.create(env_dir=self.venv_dir_str, with_pip=True, clear=True)
-
-    def cleanup(self):
-        print(f"Removing temp venv dir {self._temp_dir.name}")
-        self._temp_dir.cleanup()
-
-    def __enter__(self) -> str:
-        self.create()
-        return self.executable_str
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cleanup()
 
 
 def find_latest_wheel(parent_dir: Path) -> Path:
@@ -301,16 +206,11 @@ class Package:
 
     def _run_bash_code(self, code: str, rstrip: bool = True):
 
-        #activate = os.path.join(self.installer_venv.venv_dir_str, 'bin',
-#                                'activate')
-        #assert os.path.exists(activate), "'activate' script not found"
-
-        #assert os.path.exists('/bin/bash'), "'/bin/bash' not found"
-
         with TemporaryDirectory() as temp_cwd:
+            activate = self.installer_venv.paths.posix_bash_activate
             code = '\n'.join(["#!/bin/bash",
                               "set -e",
-                              f'source "{self.installer_venv.paths.bash_activate}"',
+                              f'source "{activate}"',
                               code])
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
@@ -328,17 +228,12 @@ class Package:
     def _run_cmdexe_code(self, code: str, rstrip: bool = True):
         """Runs command in cmd.exe"""
         with TemporaryDirectory() as temp_cwd:
-            # file that activates the venv
-            # activate_bat = os.path.join(
-            #     self.installer_venv.venv_dir_str,
-            #     'Scripts',
-            #     'activate.bat')
-            # assert os.path.exists(activate_bat), "activate.bat not found"
+            activate_bat = self.installer_venv.paths.windows_cmdexe_activate
 
             # temp file with commands to run
             temp_bat_file = Path(temp_cwd) / "_run_cmdexe_code.bat"
             temp_bat_file.write_text(
-                '\n'.join([f"CALL {self.installer_venv.paths.windows_activate_bat}",
+                '\n'.join([f"CALL {activate_bat}",
                            code]))
 
             # todo param /u formats output as unicode?
