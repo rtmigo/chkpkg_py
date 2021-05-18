@@ -346,7 +346,7 @@ class Package:
 
             return self._output(cp, rstrip)
 
-    def _run_windows_shell_code_1(self, code: str, rstrip: bool = True):
+    def _run_windows_shell_code(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
             temp_bat_file = Path(temp_current_dir) / "commands.bat"
             output_file = Path(temp_current_dir) / "output.txt"
