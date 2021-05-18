@@ -7,4 +7,3 @@ __summary__ = "Tests Python package sources to see if they build " \
               "successfully to a PyPi compatible distribution"
 __keywords__ = "package distribution wheel whl " \
                "testing setup setuptools qa ci".split()
-
