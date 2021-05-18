@@ -44,22 +44,25 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      # weirdly tests fail on Windows with 'python3' instead 'python'
-      - name: Test greeter
-        run: |
-          cd test_projects/greeter
-          python test_pkg.py
+      - name: Unit test
+        run: python ./test_unit.py
 
-      - name: Test invalid_metadata
-        run: |
-          cd test_projects/invalid_metadata
-          python test_pkg.py
+      # weirdly tests fail on Windows with 'python3' instead 'python'
+#      - name: Test greeter
+#        run: |
+#          cd test_projects/greeter
+#          python test_pkg.py
+#
+#      - name: Test invalid_metadata
+#        run: |
+#          cd test_projects/invalid_metadata
+#          python test_pkg.py
 
       - name: "Testing chkpkg as a package"
       #- name: "Pyrel: testing chkpkg as a package"
         #if: matrix.os != 'windows-latest'
         run: |
-          python test_chkpkg_as_pkg.py
+          python test_pkg_itself.py
 
   to-staging:
     needs: test
