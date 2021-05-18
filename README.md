@@ -28,15 +28,17 @@ from chkpkg import Package
 
 with Package() as pkg:
     pkg.run_python_code('import mypackage; mypackage.myfunc()')
-    pkg.run_shell_code('mycli --version')
+    pkg.run_shell_code('mypackage_cli --version')
     
 print("Package is OK!")
 ```
 
-This **test script** creates a distribution, installs the package from that
-distribution, imports the newly installed package and calls `myfunc()` from it.
-If at least one command returned a non-zero exit code, an exception would be
-thrown. The absence of exceptions means that the package is fine.
+This **test script** creates a distribution from project sources, installs the
+package from the distribution into a virtual environment, tries importing and
+running the installed package from python and command line.
+
+If any results in an error, an exception is thrown. The absence of exceptions
+means that the package is fine.
 
 By default, we assume that the `setup.py` or `setup.cfg` is located in the
 current working directory. You can specify a different path using the
@@ -53,11 +55,11 @@ pkg = Package()
 
 try:
     # step 1
-    pkg.install()
+    pkg.init()
     
     # step 2   
-    pkg.run_python_code('import mymodule')
-    pkg.run_shell_code('mycli --version')
+    pkg.run_python_code('import mypackage; mypackage.myfunc()')
+    pkg.run_shell_code('mypackage_cli --version')
 
 finally:
     # step 3
@@ -67,10 +69,10 @@ finally:
 ## Step 1: Build, Verify, Install
 
 ``` python3
-pkg.install()
+pkg.init()
 ```
 
-The `install` method:
+The `init` method:
 
 - Creates a temporary virtual environment capable of building `.whl` files
     - Creates a distribution as a `.whl` file (`python -m build`)
@@ -82,7 +84,7 @@ The `install` method:
 ## Step 2: Import, Run
 
 ``` python3
-pkg.run_python_code('import my_package')
+pkg.run_python_code('import mypackage')
 ```
 
 The `run_python_code` method allows you to check that the package is installed
@@ -91,28 +93,25 @@ and can be imported without errors.
 You can also run some functions from the imported package and check the output.
 
 ``` python3
-output = pkg.run_python_code('import my_package; print(my_package.sum(2, 3))')
+output = pkg.run_python_code('import mypackage; print(mypackage.plus(2, 3))')
 assert output == "5"
 ```
 
-If the package must be installed as a CLI program, this
-can be tested with the `run_shell_code`. This function calls `cmd.exe` on
-Windows and `bash`
+If the package must be installed as a CLI program, this can be tested with
+the `run_shell_code`. This function calls `cmd.exe` on Windows and `bash`
 on other systems.
 
 ``` python3
-output = pkg.run_shell_code('my_package_cli --version')
+output = pkg.run_shell_code('mypackage_cli --version')
 assert output[0].isdigit()
 ```
 
-The current working directory will be a random temporary one.
-If `my_package_cli`
-can be run, then it really is imported into `PATH` and is available from
-everywhere.
+The current working directory will be a random temporary one. If `mypackage_cli`
+can be run, then it really is available as a shell command from any directory.
 
-However, such tests are best done on a clean system. 
-If we run the tests on development machine, it may turn out that we are running 
-a command that was in the system before the package was installed.
+However, such tests are best done on a clean system. If we run the tests on
+development machine, it may turn out that we are running a command that was in
+the system before the package was installed.
 
 ## Step 3: Cleanup
 
