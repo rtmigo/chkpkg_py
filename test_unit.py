@@ -15,3 +15,4 @@ divide()
 check_call([sys.executable, 'test_pkg.py'], cwd=tsts / 'greeter')
 divide()
 check_call([sys.executable, 'test_pkg.py'], cwd=tsts / 'invalid_metadata')
+
