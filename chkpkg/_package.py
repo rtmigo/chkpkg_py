@@ -314,10 +314,13 @@ class Package:
         return os.path.exists("/bin/bash")
 
     def _run_bash_code(self, code: str, rstrip: bool = True):
-        with TemporaryDirectory() as temp_current_dir:
-            activate = os.path.join(self.installer_venv.venv_dir, 'bin',
-                                    'activate')
 
+        activate = os.path.join(self.installer_venv.venv_dir, 'bin', 'activate')
+        assert os.path.exists(activate), "'activate' script not found"
+
+        assert os.path.exists('/bin/bash'), "'/bin/bash' not found"
+
+        with TemporaryDirectory() as temp_current_dir:
             code = '\n'.join(["#!/bin/bash",
                               "set -e",
                               f'source "{activate}"',
@@ -360,10 +363,8 @@ class Package:
             return self._output(cp, rstrip)
 
     def run_shell_code(self, code: str, rstrip: bool = True) -> str:
-
         if os.name == 'nt':
             method = self._run_cmdexe_code
         else:
             method = self._run_bash_code
-
         return method(code, rstrip=rstrip)
