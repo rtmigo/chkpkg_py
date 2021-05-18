@@ -95,27 +95,41 @@ def find_latest_wheel(parent_dir: Path) -> Path:
 
 
 class Runner:
-    """Runs commands with the same executable file (until reformat_args=False).
-    Prints the commands to the stdout with the same 'at' comments."""
+    """Prints the commands to the stdout with the same 'at' comments.
+    Runs python commands with the same executable.
+    """
 
-    def __init__(self, exe, at):
-        self.exe = exe
+    def __init__(self, python_exe, at):
+        self.python_exe = python_exe
         self.at = at
 
-    def run(self,
-            args: Union[str, List[str]],
-            title: str,
-            reformat_args: bool = True,
-            cwd: Union[Path, str] = None,
-            exception: Type[BaseException] = None,
-            executable: str = None,
-            shell: bool = False):
+    def python(self,
+               args: Union[str, List[str]],
+               title: str,
+               cwd: Union[Path, str] = None,
+               exception: Type[BaseException] = None):
 
-        if reformat_args:
-            args_list = args.split() if isinstance(args, str) else args
-            args_list = [self.exe] + args_list
-        else:
-            args_list = args
+        args_list = args.split() if isinstance(args, str) else args
+        args_list = [self.python_exe] + args_list
+        return self._run(args_list, title, cwd, exception)
+
+    def shell(self,
+              args: Union[str, List[str]],
+              title: str,
+              cwd: Union[Path, str] = None,
+              exception: Type[BaseException] = None,
+              executable: str = None):
+        args_list = args
+        return self._run(args_list, title, cwd, exception,
+                         executable=executable, shell=True)
+
+    def _run(self,
+             args_list,
+             title: str,
+             cwd: Union[Path, str] = None,
+             exception: Type[BaseException] = None,
+             executable: str = None,
+             shell: bool = False):
 
         print_command(cmd=args_list, at=self.at, title=title)
 
@@ -221,18 +235,18 @@ class Package:
 
         # INSTALLING BUILD ####################################################
 
-        builder.run('-m pip install --upgrade pip',
-                    title='Upgrading pip',
-                    exception=CannotInitializeEnvironment)
-        builder.run('-m pip install --upgrade build',
-                    title='Installing build',
-                    exception=CannotInitializeEnvironment)
+        builder.python('-m pip install --upgrade pip',
+                       title='Upgrading pip',
+                       exception=CannotInitializeEnvironment)
+        builder.python('-m pip install --upgrade build',
+                       title='Installing build',
+                       exception=CannotInitializeEnvironment)
 
         with TemporaryDirectory() as temp_dist_dir:
             # BUILDING ########################################################
 
             with BuildCleaner(self.project_source_dir):
-                builder.run(
+                builder.python(
                     ['-m', 'build', '--outdir', temp_dist_dir, '--wheel'],
                     title='Building the .whl',
                     cwd=self.project_source_dir)
@@ -244,15 +258,15 @@ class Package:
 
             # TWINE CHECK #####################################################
 
-            builder.run('-m pip install --upgrade twine',
-                        title='Installing twine',
-                        exception=CannotInitializeEnvironment)
+            builder.python('-m pip install --upgrade twine',
+                           title='Installing twine',
+                           exception=CannotInitializeEnvironment)
 
             # running twine checks on the new file
-            builder.run(['-m', 'twine', 'check',
-                         os.path.join(temp_dist_dir, '*'), '--strict'],
-                        title='Twine check',
-                        exception=TwineCheckFailed)
+            builder.python(['-m', 'twine', 'check',
+                            os.path.join(temp_dist_dir, '*'), '--strict'],
+                           title='Twine check',
+                           exception=TwineCheckFailed)
 
             # TEST VENV #######################################################
 
@@ -262,11 +276,11 @@ class Package:
             installer_python = self.installer_venv.__enter__()
             self._installer = Runner(installer_python, at='installer venv')
 
-            self._installer.run('-m pip install --upgrade pip',
-                                title='Upgrading pip',
-                                exception=CannotInitializeEnvironment)
+            self._installer.python('-m pip install --upgrade pip',
+                                   title='Upgrading pip',
+                                   exception=CannotInitializeEnvironment)
 
-            self._installer.run(
+            self._installer.python(
                 ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
                 title=f'Installing {whl.name}',
                 exception=FailedToInstallPackage)
@@ -287,10 +301,11 @@ class Package:
 
     def run_python_code(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
-            cp = self._installer.run(['-c', code],
-                                     title="Running Python code (cwd is temp dir)",
-                                     cwd=temp_current_dir,
-                                     exception=CodeExecutionFailed)
+            cp = self._installer.python(
+                ['-c', code],
+                title="Running Python code (cwd is temp dir)",
+                cwd=temp_current_dir,
+                exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
 
@@ -310,13 +325,11 @@ class Package:
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
-            cp = self._installer.run(
+            cp = self._installer.shell(
                 code,
-                reformat_args=False,
                 title="Running Bash code (cwd is temp dir)",
                 cwd=temp_current_dir,
-                shell=True, executable='/bin/bash',
-                # input=code,
+                executable='/bin/bash',
                 exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
@@ -338,13 +351,10 @@ class Package:
                            code]))
 
             # todo param /u formats output as unicode?
-            cp = self._installer.run(
+            cp = self._installer.shell(
                 ["cmd.exe", "/q", "/c", str(temp_bat_file)],
-                reformat_args=False,
                 title="Running code in cmd.exe (cwd is temp dir)",
                 cwd=temp_current_dir,
-                shell=True,  # executable='/bin/bash',
-                # input=code,
                 exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
