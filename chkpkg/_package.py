@@ -113,15 +113,16 @@ class Runner:
         args_list = [self.python_exe] + args_list
         return self._run(args_list, title, cwd, exception)
 
-    def shell(self,
-              args: Union[str, List[str]],
-              title: str,
-              cwd: Union[Path, str] = None,
-              exception: Type[BaseException] = None,
-              executable: str = None):
+    def command(self,
+                args: Union[str, List[str]],
+                title: str,
+                cwd: Union[Path, str] = None,
+                exception: Type[BaseException] = None,
+                executable: str = None,
+                shell: bool = False):
         args_list = args
         return self._run(args_list, title, cwd, exception,
-                         executable=executable, shell=True)
+                         executable=executable, shell=shell)
 
     def _run(self,
              args_list,
@@ -328,11 +329,12 @@ class Package:
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
-            cp = self._installer.shell(
+            cp = self._installer.command(
                 code,
                 title="Running Bash code (cwd is temp dir)",
                 cwd=temp_current_dir,
                 executable='/bin/bash',
+                shell=True,
                 exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
@@ -354,10 +356,11 @@ class Package:
                            code]))
 
             # todo param /u formats output as unicode?
-            cp = self._installer.shell(
+            cp = self._installer.command(
                 ["cmd.exe", "/q", "/c", str(temp_bat_file)],
                 title="Running code in cmd.exe (cwd is temp dir)",
                 cwd=temp_current_dir,
+                shell=False,
                 exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
