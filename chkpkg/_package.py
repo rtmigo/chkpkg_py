@@ -330,9 +330,9 @@ class Package:
                 'Scripts',
                 'activate.bat')
 
-            code = '\n'.join([f'{activate_bat}',
+            code = '\r\n'.join([f'{activate_bat}',
                               # activate,
-                              code])
+                              code, ''])
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
