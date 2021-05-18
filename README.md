@@ -83,7 +83,7 @@ The `install` method:
 pkg.run_python_code('import my_package')
 ```
 
-The `run_python` method allows you to check that the package is installed
+The `run_python_code` method allows you to check that the package is installed
 and can be imported without errors.
 
 You can also run some functions from the imported package and check the output.
