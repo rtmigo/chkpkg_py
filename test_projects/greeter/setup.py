@@ -16,7 +16,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            f'greeter = greeter:say_hi',
+            f'greeter_cli = greeter:say_hi',
         ]},
 
     keywords="apps python packages deployment".split(),

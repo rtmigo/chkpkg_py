@@ -6,13 +6,14 @@ Checks a Python package intended to be published on PyPi:
 - сan we install a package from the newly built `.whl`?
 - can we import the installed package into the code?
 
+Thus, we check the correctness of `setup.py` or `setup.cfg`.
+
 `chkpkg` can be used as part of CI pipeline. The check can be run from a `.py`
 script, which is as cross-platform as Python itself.
 
-
 ---
 
-`chkpkg` was tested in Python 3.6-3.9 on macOS, Ubuntu and Windows.
+`chkpkg` supports Python 3.6+ on Linux, macOS and Windows.
 
 # Install
 
@@ -61,7 +62,7 @@ finally:
     pkg.cleanup()    
 ```
 
-### Step 1: build, verify, install
+### Step 1: Build, Verify, Install
 
 ``` python3
 pkg.install()
@@ -76,7 +77,7 @@ The `install` method:
     - Installs the package from the newly created `.whl` into the clean virtual
       environment
 
-### Step 2: import, run
+### Step 2: Import, Run
 
 ``` python3
 pkg.run_python_code('import my_package')
@@ -92,7 +93,26 @@ output = pkg.run_python_code('import my_package; print(my_package.sum(2, 3))')
 assert output == "5"
 ```
 
-### Step 3: cleanup
+If the package must be installed as a CLI program, this can be tested with 
+the `run_shell_code`. This function calls `cmd.exe` on Windows and `bash` 
+on other systems.
+
+``` python3
+output = pkg.run_shell_code('my_package_cli --version')
+assert output[0].isdigit()
+```
+
+The current working directory will be a random temporary one. If `my_package_cli` 
+can be run, then it really is imported into `PATH` and is available from 
+everywhere.
+
+However, such tests are best done on a clean system. Otherwise, it may turn out 
+that we are running a command that was in the system before the package was 
+installed.
+
+
+
+### Step 3: Cleanup
 
 ``` python3
 pkg.cleanup()
