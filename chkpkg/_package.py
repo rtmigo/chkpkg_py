@@ -1,21 +1,21 @@
 # SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
-import io
-import shutil
+import os
 import sys
+import venv
+import warnings
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from subprocess import run as run_process, CalledProcessError, PIPE, STDOUT, \
     CompletedProcess
-from typing import Optional, List, Union, Iterator, Type
-import venv
-import os
+from tempfile import TemporaryDirectory
+from typing import Optional, List, Union, Type
 
+from ._cleaner import BuildCleaner
 from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
     CannotInitializeEnvironment, CodeExecutionFailed
 
 
-def print_command(cmd, title, at):
+def print_command(cmd: Union[str, List[str]], title: str, at: str):
     print()
 
     print('== ' + title.upper() + ' ' +
@@ -30,7 +30,39 @@ def print_command(cmd, title, at):
     print()
 
 
+class VenvPaths:
+    def __init__(self, venv_dir: Union[Path, str]):
+        self.venv_dir = Path(venv_dir)
+
+    @property
+    def executable(self):
+        p = self.venv_dir / 'bin' / 'python'
+        if p.exists():
+            return p
+        p = self.venv_dir / 'Scripts' / 'python.exe'
+        if p.exists():
+            return p
+        raise FileNotFoundError(
+            f"Cannot find Python executable inside {self.venv_dir}")
+
+    @property
+    def windows_activate_bat(self):
+        p = self.venv_dir / 'Scripts' / 'activate.bat'
+        if not p.exists():
+            raise FileNotFoundError
+        return p
+
+    @property
+    def bash_activate(self):
+        p = self.venv_dir / 'bin' / 'activate'
+        if not p.exists():
+            raise FileNotFoundError
+        return p
+
+
+
 def _venv_dir_to_executable(venv_dir: str) -> str:
+    warnings.warn("Obsolete", DeprecationWarning)
     p = os.path.join(venv_dir, 'bin', 'python')
     if os.path.exists(p):
         return p
@@ -57,20 +89,24 @@ class TempVenv:
     @property
     def executable(self):
         if self._executable is None:
-            self._executable = _venv_dir_to_executable(self.venv_dir)
+            self._executable = _venv_dir_to_executable(self.venv_dir_str)
             print(f"The python executable: {self._executable}")
         return self._executable
 
     @property
-    def venv_dir(self) -> str:
+    def venv_dir_str(self) -> str:
         return self._temp_dir.name
+
+    @property
+    def paths(self) -> VenvPaths:
+        return VenvPaths(self._temp_dir.name)
 
     def create(self):
         self._temp_dir = TemporaryDirectory()
-        assert os.path.exists(self.venv_dir)
-        assert os.path.isdir(self.venv_dir)
-        print(f"Initializing venv in {self.venv_dir}")
-        venv.create(env_dir=self.venv_dir, with_pip=True, clear=True)
+        assert os.path.exists(self.venv_dir_str)
+        assert os.path.isdir(self.venv_dir_str)
+        print(f"Initializing venv in {self.venv_dir_str}")
+        venv.create(env_dir=self.venv_dir_str, with_pip=True, clear=True)
 
     def cleanup(self):
         print(f"Removing temp venv dir {self._temp_dir.name}")
@@ -153,59 +189,6 @@ class Runner:
                 raise exception(cpe)
 
         return cp
-
-
-class BuildCleaner:
-    """Removes "dist", "build" and "*.egg-info" directories if they did not
-    exist when the object was created."""
-
-    def __init__(self, project_dir: Path):
-        self.project_dir = project_dir.absolute()
-        self._build_existed = self.build_dir.exists()
-        self._distr_existed = self.distr_dir.exists()
-        self._eggs_existed = list(self.egg_infos)
-
-    @property
-    def build_dir(self) -> Path:
-        return self.project_dir / "build"
-
-    @property
-    def distr_dir(self) -> Path:
-        return self.project_dir / "distr"
-
-    @property
-    def egg_infos(self) -> Iterator[Path]:
-        return self.project_dir.glob('*.egg-info')
-
-    def cleanup(self):
-
-        def remove(p: Path):
-            shutil.rmtree(p, ignore_errors=True)
-
-        if not self._build_existed:
-            remove(self.build_dir)
-        if not self._distr_existed:
-            remove(self.distr_dir)
-
-        for egg in self.egg_infos:
-            if egg not in self._eggs_existed:
-                remove(egg)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cleanup()
-
-
-def run_as_bash_script(script: str, input: bytes = None) -> CompletedProcess:
-    """Runs the provided string as a .sh script."""
-    # almost same as in VIEN
-
-    # we need executable='/bin/bash' for Ubuntu 18.04, it will run
-    # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
-    return run_process(script, shell=True, executable='/bin/bash',
-                       input=input)
 
 
 class Package:
@@ -300,7 +283,7 @@ class Package:
             o = o.rstrip()
         return o
 
-    def run_python_code(self, code: str, rstrip: bool = True):
+    def run_python_code(self, code: str, rstrip: bool = True) -> str:
         with TemporaryDirectory() as temp_current_dir:
             cp = self._installer.python(
                 ['-c', code],
@@ -316,15 +299,16 @@ class Package:
 
     def _run_bash_code(self, code: str, rstrip: bool = True):
 
-        activate = os.path.join(self.installer_venv.venv_dir, 'bin', 'activate')
-        assert os.path.exists(activate), "'activate' script not found"
+        #activate = os.path.join(self.installer_venv.venv_dir_str, 'bin',
+#                                'activate')
+        #assert os.path.exists(activate), "'activate' script not found"
 
-        assert os.path.exists('/bin/bash'), "'/bin/bash' not found"
+        #assert os.path.exists('/bin/bash'), "'/bin/bash' not found"
 
-        with TemporaryDirectory() as temp_current_dir:
+        with TemporaryDirectory() as temp_cwd:
             code = '\n'.join(["#!/bin/bash",
                               "set -e",
-                              f'source "{activate}"',
+                              f'source "{self.installer_venv.paths.bash_activate}"',
                               code])
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
@@ -332,7 +316,7 @@ class Package:
             cp = self._installer.command(
                 code,
                 title="Running Bash code (cwd is temp dir)",
-                cwd=temp_current_dir,
+                cwd=temp_cwd,
                 executable='/bin/bash',
                 shell=True,
                 exception=CodeExecutionFailed)
@@ -341,25 +325,25 @@ class Package:
 
     def _run_cmdexe_code(self, code: str, rstrip: bool = True):
         """Runs command in cmd.exe"""
-        with TemporaryDirectory() as temp_current_dir:
+        with TemporaryDirectory() as temp_cwd:
             # file that activates the venv
-            activate_bat = os.path.join(
-                self.installer_venv.venv_dir,
-                'Scripts',
-                'activate.bat')
-            assert os.path.exists(activate_bat), "activate.bat not found"
+            # activate_bat = os.path.join(
+            #     self.installer_venv.venv_dir_str,
+            #     'Scripts',
+            #     'activate.bat')
+            # assert os.path.exists(activate_bat), "activate.bat not found"
 
             # temp file with commands to run
-            temp_bat_file = Path(temp_current_dir) / "_run_cmdexe_code.bat"
+            temp_bat_file = Path(temp_cwd) / "_run_cmdexe_code.bat"
             temp_bat_file.write_text(
-                '\n'.join([f"CALL {activate_bat}",
+                '\n'.join([f"CALL {self.installer_venv.paths.windows_activate_bat}",
                            code]))
 
             # todo param /u formats output as unicode?
             cp = self._installer.command(
                 ["cmd.exe", "/q", "/c", str(temp_bat_file)],
                 title="Running code in cmd.exe (cwd is temp dir)",
-                cwd=temp_current_dir,
+                cwd=temp_cwd,
                 shell=False,
                 exception=CodeExecutionFailed)
 
