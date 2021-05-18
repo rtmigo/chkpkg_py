@@ -15,8 +15,6 @@ script, which is as cross-platform as Python itself.
 
 `chkpkg` supports Python 3.6+ on Linux, macOS and Windows.
 
-
-
 # Install
 
 ``` bash
