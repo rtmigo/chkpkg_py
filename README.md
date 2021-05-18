@@ -102,7 +102,13 @@ output = pkg.run_shell_code('my_package_cli --version')
 assert output[0].isdigit()
 ```
 
+The current working directory will be a random temporary one. If `my_package_cli` 
+can be run, then it really is imported into `PATH` and is available from 
+everywhere.
 
+However, such tests are best done on a clean system. Otherwise, it may turn out 
+that we are running a command that was in the system before the package was 
+installed.
 
 
 
