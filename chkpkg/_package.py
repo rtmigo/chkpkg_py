@@ -323,7 +323,7 @@ class Package:
 
     def _run_windows_shell_code(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
-            activate = os.path.join(self.installer_venv.venv_dir, 'bin',
+            activate = os.path.join(self.installer_venv.venv_dir, 'Scripts',
                                     'activate.bat')
 
             code = '\n'.join([f'{activate}',
