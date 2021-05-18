@@ -8,4 +8,3 @@ if __name__ == "__main__":
         pkg.run_python_code('import chkpkg')
 
     print("\nPackage is OK!")
-
