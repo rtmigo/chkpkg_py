@@ -361,9 +361,7 @@ class Package:
 
             temp_bat_file.write_text(temp_bat_text)
 
-            # we need executable='/bin/bash' for Ubuntu 18.04, it will run
-            # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
-            cp = self._installer.run(f"{temp_bat_file} > {output_file}",
+            cp = self._installer.run(f"cmd.exe {temp_bat_file}",
                                      exact_args=True,
                                      title="Running shell code (cwd is temp dir)",
                                      cwd=temp_current_dir,
@@ -371,12 +369,12 @@ class Package:
                                      # input=code,
                                      exception=CodeExecutionFailed)
 
-            out = output_file.read_text(sys.stdout.encoding)
-            if rstrip:
-                out = out.rstrip()
-            return out
+            #out = output_file.read_text(sys.stdout.encoding)
+            #if rstrip:
+                #out = out.rstrip()
+            #return out
 
-            #return self._output(cp, rstrip)
+            return self._output(cp, rstrip)
 
     def run_shell_code(self, code: str, rstrip: bool = True) -> str:
 
