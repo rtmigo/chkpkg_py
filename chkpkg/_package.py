@@ -356,7 +356,7 @@ class Package:
                 'Scripts',
                 'activate.bat')
 
-            temp_bat_text = '\n'.join(["CALL activate_bat",
+            temp_bat_text = '\n'.join([f"CALL {activate_bat}",
                                        code])
 
             temp_bat_file.write_text(temp_bat_text)
