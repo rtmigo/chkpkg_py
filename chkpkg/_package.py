@@ -103,7 +103,7 @@ class Runner:
         self.at = at
 
     def run(self, args: Union[str, List[str]], title: str,
-            exact_args = True,
+            exact_args: bool = False,
             cwd: Union[Path, str] = None,
             exception: Type[BaseException] = None,
             # stdin: io.BytesIO = None,
@@ -111,7 +111,8 @@ class Runner:
             shell: bool = False,
             input: bytes = None
             ):
-        args_list = args.split() if isinstance(args, str) and exact_args else args
+        args_list = args.split() if isinstance(args,
+                                               str) and exact_args else args
         if not exact_args:
             args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
@@ -312,32 +313,34 @@ class Package:
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
             cp = self._installer.run(code,
-                                     exact_args=False,
+                                     exact_args=True,
                                      title="Running Bash code (cwd is temp dir)",
                                      cwd=temp_current_dir,
                                      shell=True, executable='/bin/bash',
-                                     #input=code,
+                                     # input=code,
                                      exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
 
     def _run_windows_shell_code(self, code: str, rstrip: bool = True):
         with TemporaryDirectory() as temp_current_dir:
-            activate = os.path.join(self.installer_venv.venv_dir, 'Scripts',
-                                    'activate.bat')
+            activate_bat = os.path.join(
+                self.installer_venv.venv_dir,
+                'Scripts',
+                'activate.bat')
 
-            code = '\n'.join([f'{activate}',
+            code = '\n'.join([f'{activate_bat}',
                               # activate,
                               code])
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
             cp = self._installer.run(code,
-                                     exact_args=False,
+                                     exact_args=True,
                                      title="Running shell code (cwd is temp dir)",
                                      cwd=temp_current_dir,
                                      shell=True,  # executable='/bin/bash',
-                                     #input=code,
+                                     # input=code,
                                      exception=CodeExecutionFailed)
 
             return self._output(cp, rstrip)
