@@ -361,7 +361,7 @@ class Package:
 
             temp_bat_file.write_text(temp_bat_text)
 
-            cp = self._installer.run(f"cmd.exe {temp_bat_file}",
+            cp = self._installer.run(f"cmd.exe /c {temp_bat_file}",
                                      exact_args=True,
                                      title="Running shell code (cwd is temp dir)",
                                      cwd=temp_current_dir,
