@@ -32,7 +32,7 @@ with Package() as pkg:
 print("Package is OK!")
 ```
 
-This code creates a distribution, installs the package from that distribution,
+This **test script** creates a distribution, installs the package from that distribution,
 imports the newly installed package and calls `myfunc()` from it. If at least
 one command returned a non-zero exit code, an exception would be thrown. The
 absence of exceptions means that the package is fine.
@@ -43,7 +43,7 @@ argument `Package(project_dir=...)`
 
 ## Steps
 
-Without context, the code would look like this:
+Without context, the test script would look like this:
 
 ``` python3
 from chkpkg import Package
