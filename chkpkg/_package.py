@@ -361,18 +361,20 @@ class Package:
 
             temp_bat_file.write_text(temp_bat_text)
 
-            cp = self._installer.run(f"cmd.exe /q /c {temp_bat_file}",
-                                     exact_args=True,
-                                     title="Running shell code (cwd is temp dir)",
-                                     cwd=temp_current_dir,
-                                     shell=True,  # executable='/bin/bash',
-                                     # input=code,
-                                     exception=CodeExecutionFailed)
+            # todo param /u formats output as unicode?
+            cp = self._installer.run(
+                ["cmd.exe", "/q", "/c", temp_bat_file],
+                exact_args=True,
+                title="Running shell code (cwd is temp dir)",
+                cwd=temp_current_dir,
+                shell=True,  # executable='/bin/bash',
+                # input=code,
+                exception=CodeExecutionFailed)
 
-            #out = output_file.read_text(sys.stdout.encoding)
-            #if rstrip:
-                #out = out.rstrip()
-            #return out
+            # out = output_file.read_text(sys.stdout.encoding)
+            # if rstrip:
+            # out = out.rstrip()
+            # return out
 
             return self._output(cp, rstrip)
 
