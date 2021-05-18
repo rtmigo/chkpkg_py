@@ -109,11 +109,12 @@ class Runner:
             # stdin: io.BytesIO = None,
             executable: str = None,
             shell: bool = False,
-            input: bytes = None
-            ):
-        args_list = args.split() if isinstance(args,
-                                               str) and exact_args else args
-        if not exact_args:
+            input: bytes = None):
+
+        if exact_args:
+            args_list = [args] if isinstance(args, str) else args
+        else:
+            args_list = args.split() if isinstance(args,str) else args
             args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
 
