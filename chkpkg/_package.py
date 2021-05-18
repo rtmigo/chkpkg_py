@@ -112,7 +112,7 @@ class Runner:
             input: bytes = None
             ):
         args_list = args.split() if isinstance(args, str) and exact_args else args
-        if not shell:
+        if not exact_args:
             args_list = [self.exe] + args_list
         print_command(cmd=args_list, at=self.at, title=title)
 
