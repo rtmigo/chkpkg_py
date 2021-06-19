@@ -62,10 +62,12 @@ class Runner:
                 cwd: Union[Path, str] = None,
                 exception: Type[BaseException] = None,
                 executable: str = None,
-                shell: bool = False):
+                shell: bool = False,
+                expected_return_code: int = 0):
         args_list = args
         return self._run(args_list, title, cwd, exception,
-                         executable=executable, shell=shell)
+                         executable=executable, shell=shell,
+                         expected_return_code=expected_return_code)
 
     def _run(self,
              args_list,
@@ -73,7 +75,8 @@ class Runner:
              cwd: Union[Path, str] = None,
              exception: Type[BaseException] = None,
              executable: str = None,
-             shell: bool = False):
+             shell: bool = False,
+             expected_return_code: int = 0):
 
         print_command(cmd=args_list, at=self.at, title=title)
 
@@ -87,7 +90,10 @@ class Runner:
         if output:
             print(output)
 
-        if cp.returncode != 0:
+        if cp.returncode != expected_return_code:
+            # this exception always prints something like
+            # "greeter_cli hi' returned non-zero exit status 0."
+            # todo replace the exception and the message
             cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
                                      cp.stderr)
             if exception is None:
@@ -204,7 +210,7 @@ class Package:
     def _can_run_bash(self):
         return os.path.exists("/bin/bash")
 
-    def _run_bash_code(self, code: str, rstrip: bool = True):
+    def _run_bash_code(self, code: str, rstrip: bool = True, expected_return_code: int = 0):
 
         with TemporaryDirectory() as temp_cwd:
             activate = self.installer_venv.paths.posix_bash_activate
@@ -221,11 +227,15 @@ class Package:
                 cwd=temp_cwd,
                 executable='/bin/bash',
                 shell=True,
-                exception=CodeExecutionFailed)
+                exception=CodeExecutionFailed,
+                expected_return_code=expected_return_code
+            )
 
             return self._output(cp, rstrip)
 
-    def _run_cmdexe_code(self, code: str, rstrip: bool = True):
+    def _run_cmdexe_code(self, code: str,
+                         rstrip: bool = True,
+                         expected_return_code: int = 0):
         """Runs command in cmd.exe"""
         with TemporaryDirectory() as temp_cwd:
             activate_bat = self.installer_venv.paths.windows_cmdexe_activate
@@ -242,13 +252,14 @@ class Package:
                 title="Running code in cmd.exe (cwd is temp dir)",
                 cwd=temp_cwd,
                 shell=False,
-                exception=CodeExecutionFailed)
+                exception=CodeExecutionFailed,
+                expected_return_code=expected_return_code)
 
             return self._output(cp, rstrip)
 
-    def run_shell_code(self, code: str, rstrip: bool = True) -> str:
+    def run_shell_code(self, code: str, rstrip: bool = True, expected_return_code: int = 0) -> str:
         if os.name == 'nt':
             method = self._run_cmdexe_code
         else:
             method = self._run_bash_code
-        return method(code, rstrip=rstrip)
+        return method(code, rstrip=rstrip, expected_return_code=expected_return_code)
