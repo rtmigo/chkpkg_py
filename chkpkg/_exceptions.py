@@ -6,14 +6,30 @@ from typing import Optional
 
 
 class ChkpkgException(Exception):
-    def __init__(self, message: str, inner: Optional[BaseException]):
+    def __init__(self,
+                 message: Optional[str] = None,
+                 inner: Optional[BaseException] = None):
         self.message = message
         self.inner = inner
 
 
-class TwineCheckFailed(ChkpkgException):
-    def __init__(self, inner):
-        super().__init__("Twine check failed", inner)
+class CompletedProcessError(ChkpkgException):
+    def __init__(self,
+                 message: Optional[str] = None,
+                 inner: Optional[BaseException] = None,
+                 process: Optional[CompletedProcess] = None):
+        super().__init__(message=message, inner=inner)
+        self.process = process
+
+    def __str__(self):
+        return "\n".join([
+            str(super()),
+            f"process: {self.process}",
+        ])
+
+
+class TwineCheckFailed(CompletedProcessError):
+    pass
 
 
 class FailedToInstallPackage(ChkpkgException):
