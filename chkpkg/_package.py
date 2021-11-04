@@ -94,12 +94,21 @@ class Runner:
             # this exception always prints something like
             # "greeter_cli hi' returned non-zero exit status 0."
             # todo replace the exception and the message
-            cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
-                                     cp.stderr)
+            # cpe =
+
             if exception is None:
-                raise cpe
+                # this exception always prints something like
+                # "greeter_cli hi' returned non-zero exit status 0."
+                # (which is weird: 0 is not a non-zero:)
+                raise CalledProcessError(cp.returncode, args_list, cp.stdout,
+                                         cp.stderr)
+            elif exception==CodeExecutionFailed:
+                raise CodeExecutionFailed(
+                    "Unexpected return code",
+                    process=cp
+                )
             else:
-                raise exception(cpe)
+                raise exception()
 
         return cp
 
@@ -210,7 +219,8 @@ class Package:
     def _can_run_bash(self):
         return os.path.exists("/bin/bash")
 
-    def _run_bash_code(self, code: str, rstrip: bool = True, expected_return_code: int = 0):
+    def _run_bash_code(self, code: str, rstrip: bool = True,
+                       expected_return_code: int = 0):
 
         with TemporaryDirectory() as temp_cwd:
             activate = self.installer_venv.paths.posix_bash_activate
@@ -257,9 +267,11 @@ class Package:
 
             return self._output(cp, rstrip)
 
-    def run_shell_code(self, code: str, rstrip: bool = True, expected_return_code: int = 0) -> str:
+    def run_shell_code(self, code: str, rstrip: bool = True,
+                       expected_return_code: int = 0) -> str:
         if os.name == 'nt':
             method = self._run_cmdexe_code
         else:
             method = self._run_bash_code
-        return method(code, rstrip=rstrip, expected_return_code=expected_return_code)
+        return method(code, rstrip=rstrip,
+                      expected_return_code=expected_return_code)

@@ -15,12 +15,14 @@ def load_module_dict(filename: str) -> dict:
 name = "chkpkg"
 constants = load_module_dict(f'{name}/_constants.py')
 
+
 def read_readme() -> str:
     # need encoding for Windows
     txt = (Path(__file__).parent / 'README.md').read_text(encoding='utf-8')
     # skipping banges (everything before the first header)
     txt = txt.partition("# ")[-1]
     return txt
+
 
 setup(
     name=name,
