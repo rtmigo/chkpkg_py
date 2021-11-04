@@ -10,7 +10,7 @@ from typing import Optional, List, Union, Type
 
 from ._cleaner import BuildCleaner
 from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
-    CannotInitializeEnvironment, CodeExecutionFailed
+    CannotInitializeEnvironment, CodeExecutionFailed, CompletedProcessError
 from ._venvs import TempVenv
 
 
@@ -73,7 +73,7 @@ class Runner:
              args_list,
              title: str,
              cwd: Union[Path, str] = None,
-             exception: Type[BaseException] = None,
+             exception: Type[CompletedProcessError] = None,
              executable: str = None,
              shell: bool = False,
              expected_return_code: int = 0):
@@ -91,15 +91,23 @@ class Runner:
             print(output)
 
         if cp.returncode != expected_return_code:
-            # this exception always prints something like
-            # "greeter_cli hi' returned non-zero exit status 0."
-            # todo replace the exception and the message
-            cpe = CalledProcessError(cp.returncode, args_list, cp.stdout,
-                                     cp.stderr)
             if exception is None:
-                raise cpe
-            else:
-                raise exception(cpe)
+                exception = CompletedProcessError
+            raise exception(process=cp)
+            # if exception is None:
+            #     # the CalledProcessError always prints something like
+            #     # "greeter_cli hi' returned non-zero exit status 0."
+            #     # The message is a bit weird, but the exception is the
+            #     # most common and expected
+            #     raise CalledProcessError(cp.returncode, args_list, cp.stdout,
+            #                              cp.stderr)
+            # elif exception==CodeExecutionFailed:
+            #     raise CodeExecutionFailed(
+            #         "Unexpected return code",
+            #         process=cp
+            #     )
+            # else:
+            #     raise exception()
 
         return cp
 
@@ -154,6 +162,12 @@ class Package:
             print(f'Latest wheel: {whl}')
 
             # TWINE CHECK #####################################################
+
+            # 2021-11: python3.9 -m build creates .whl unsupported by twine.
+            #
+            # InvalidDistribution: Invalid distribution metadata.
+            # This version of twine supports Metadata-Version 1.0, 1.1, 1.2,
+            # 2.0, and 2.1.
 
             builder.python('-m pip install --upgrade twine',
                            title='Installing twine',
@@ -210,7 +224,8 @@ class Package:
     def _can_run_bash(self):
         return os.path.exists("/bin/bash")
 
-    def _run_bash_code(self, code: str, rstrip: bool = True, expected_return_code: int = 0):
+    def _run_bash_code(self, code: str, rstrip: bool = True,
+                       expected_return_code: int = 0):
 
         with TemporaryDirectory() as temp_cwd:
             activate = self.installer_venv.paths.posix_bash_activate
@@ -257,9 +272,11 @@ class Package:
 
             return self._output(cp, rstrip)
 
-    def run_shell_code(self, code: str, rstrip: bool = True, expected_return_code: int = 0) -> str:
+    def run_shell_code(self, code: str, rstrip: bool = True,
+                       expected_return_code: int = 0) -> str:
         if os.name == 'nt':
             method = self._run_cmdexe_code
         else:
             method = self._run_bash_code
-        return method(code, rstrip=rstrip, expected_return_code=expected_return_code)
+        return method(code, rstrip=rstrip,
+                      expected_return_code=expected_return_code)
