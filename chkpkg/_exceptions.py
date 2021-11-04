@@ -9,8 +9,14 @@ class ChkpkgException(Exception):
     def __init__(self,
                  message: Optional[str] = None,
                  inner: Optional[BaseException] = None):
-        self.message = message
+        super().__init__(message)
         self.inner = inner
+
+    def __str__(self):
+        return "\n".join([
+            str(super()),
+            f"inner: {self.inner}"
+        ])
 
 
 class CompletedProcessError(ChkpkgException):
@@ -24,7 +30,7 @@ class CompletedProcessError(ChkpkgException):
     def __str__(self):
         return "\n".join([
             str(super()),
-            f"process: {self.process}",
+            f"process: {self.process}"
         ])
 
 
@@ -42,17 +48,3 @@ class CannotInitializeEnvironment(ChkpkgException):
 
 class CodeExecutionFailed(CompletedProcessError):
     pass
-    # def __init__(self,
-    #              message="Code execution failed",
-    #              inner: Optional[BaseException] = None,
-    #              process: Optional[CompletedProcess] = None):
-    #     super().__init__(message, inner=inner)
-    #
-    #     self.message = message
-    #     self.process = process
-    #
-    # def __str__(self):
-    #     return "\n".join([
-    #         self.message,
-    #         f"process: {self.process}",
-    #     ])
