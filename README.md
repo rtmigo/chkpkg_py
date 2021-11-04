@@ -1,3 +1,8 @@
+[![PyPI version shields.io](https://img.shields.io/pypi/v/chkpkg.svg)](https://pypi.python.org/pypi/chkpkg/)
+[![Generic badge](https://img.shields.io/badge/Python-3.6+-blue.svg)](#)
+[![Generic badge](https://img.shields.io/badge/OS-Windows%20|%20macOS%20|%20Linux-blue.svg)](#)
+[![Downloads](https://pepy.tech/badge/chkpkg/month)](https://pepy.tech/project/chkpkg)
+
 # [chkpkg](https://github.com/rtmigo/chkpkg_py#readme)
 
 Checks a Python package intended to be published on PyPi:
