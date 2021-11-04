@@ -33,27 +33,26 @@ class TwineCheckFailed(CompletedProcessError):
 
 
 class FailedToInstallPackage(ChkpkgException):
-    def __init__(self, inner):
-        super().__init__("Failed to install the package", inner)
+    pass
 
 
 class CannotInitializeEnvironment(ChkpkgException):
-    def __init__(self, inner):
-        super().__init__("Cannot initialize environment", inner)
+    pass
 
 
-class CodeExecutionFailed(ChkpkgException):
-    def __init__(self,
-                 message="Code execution failed",
-                 inner: Optional[BaseException] = None,
-                 process: Optional[CompletedProcess] = None):
-        super().__init__(message, inner=inner)
-
-        self.message = message
-        self.process = process
-
-    def __str__(self):
-        return "\n".join([
-            self.message,
-            f"process: {self.process}",
-        ])
+class CodeExecutionFailed(CompletedProcessError):
+    pass
+    # def __init__(self,
+    #              message="Code execution failed",
+    #              inner: Optional[BaseException] = None,
+    #              process: Optional[CompletedProcess] = None):
+    #     super().__init__(message, inner=inner)
+    #
+    #     self.message = message
+    #     self.process = process
+    #
+    # def __str__(self):
+    #     return "\n".join([
+    #         self.message,
+    #         f"process: {self.process}",
+    #     ])
