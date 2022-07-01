@@ -6,14 +6,21 @@ parent = Path(__file__).parent
 tests = parent / "test_projects"
 
 
-def splitter():
-    print('\n' + '\n'.join('/' * 80 for _ in range(3)) + '\n')
+def splitter(title: str):
+    print()
+    print('/' * 80)
+    print('\\' * 80)
+    print('  '+title.upper())
+    print('\\' * 80)
+    print('/' * 80)
+    print()
 
 
+splitter("POINT 1")
 check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'], cwd=parent)
-splitter()
 
-check_call([sys.executable, 'test_pkg.py'], cwd=tests/'greeter')
-splitter()
+splitter("TEST 2")
+check_call([sys.executable, 'test_pkg.py'], cwd=tests / 'greeter')
 
-check_call([sys.executable, 'test_pkg.py'], cwd=tests/'invalid_metadata')
+splitter("TEST 3")
+check_call([sys.executable, 'test_pkg.py'], cwd=tests / 'invalid_metadata')

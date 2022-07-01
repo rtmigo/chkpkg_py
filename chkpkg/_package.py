@@ -3,10 +3,10 @@
 import os
 import sys
 from pathlib import Path
-from subprocess import run as run_process, CalledProcessError, PIPE, STDOUT, \
+from subprocess import run as run_process, PIPE, STDOUT, \
     CompletedProcess
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union, Type
+from typing import Optional, List, Union, Type, Any
 
 from ._cleaner import BuildCleaner
 from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
@@ -73,7 +73,7 @@ class Runner:
              args_list,
              title: str,
              cwd: Union[Path, str] = None,
-             exception: Type[CompletedProcessError] = None,
+             exception: Type[BaseException] = None,
              executable: str = None,
              shell: bool = False,
              expected_return_code: int = 0):
@@ -93,7 +93,9 @@ class Runner:
         if cp.returncode != expected_return_code:
             if exception is None:
                 exception = CompletedProcessError
-            raise exception(process=cp)
+            if exception == CompletedProcessError:
+                raise CompletedProcessError(process=cp)
+            raise exception()
             # if exception is None:
             #     # the CalledProcessError always prints something like
             #     # "greeter_cli hi' returned non-zero exit status 0."
@@ -122,7 +124,9 @@ class Package:
     installed correctly."""
 
     def __init__(self, project_dir: Union[str, Path] = '.'):
-        self._close_us = list()
+        # we will call __exit__ for each of the following objects
+        self._exit_on_cleanup: List[Any] = list()
+
         self._installer: Optional[Runner] = None
         self.project_source_dir = Path(project_dir).absolute()
         self.installer_venv: Optional[TempVenv] = None
@@ -132,34 +136,37 @@ class Package:
         return self
 
     def init(self):
-        tv = TempVenv()
-        self._close_us.append(tv)
-        builder_python = tv.__enter__()
-
-        builder = Runner(builder_python, at='builder venv')
+        builder_venv = TempVenv()
+        self._exit_on_cleanup.append(builder_venv)
+        builder_python_exe: str = builder_venv.__enter__()
+        builder_runner = Runner(builder_python_exe, at='builder venv')
 
         # INSTALLING BUILD ####################################################
 
-        builder.python('-m pip install --upgrade pip',
-                       title='Upgrading pip',
-                       exception=CannotInitializeEnvironment)
-        builder.python('-m pip install --upgrade build',
-                       title='Installing build',
-                       exception=CannotInitializeEnvironment)
+        print("** point 1")
+        builder_runner.python('-m pip install --upgrade pip',
+                              title='Upgrading pip',
+                              exception=CannotInitializeEnvironment)
+        print("** point 2")
+        builder_runner.python('-m pip install --upgrade build',
+                              title='Installing build',
+                              exception=CannotInitializeEnvironment)
+        print("** point 3")
 
         with TemporaryDirectory() as temp_dist_dir:
+            print("** point 4")
             # BUILDING ########################################################
 
             with BuildCleaner(self.project_source_dir):
-                builder.python(
+                builder_runner.python(
                     ['-m', 'build', '--outdir', temp_dist_dir, '--wheel'],
                     title='Building the .whl',
                     cwd=self.project_source_dir)
 
             # finding the .whl file we just created
-            whl = find_latest_wheel(Path(temp_dist_dir))
-            whl = whl.absolute()
-            print(f'Latest wheel: {whl}')
+            newly_built_whl_file: Path = find_latest_wheel(Path(temp_dist_dir))
+            newly_built_whl_file = newly_built_whl_file.absolute()
+            print(f'Latest wheel: {newly_built_whl_file}')
 
             # TWINE CHECK #####################################################
 
@@ -169,35 +176,36 @@ class Package:
             # This version of twine supports Metadata-Version 1.0, 1.1, 1.2,
             # 2.0, and 2.1.
 
-            builder.python('-m pip install --upgrade twine',
-                           title='Installing twine',
-                           exception=CannotInitializeEnvironment)
+            builder_runner.python('-m pip install --upgrade twine',
+                                  title='Installing twine',
+                                  exception=CannotInitializeEnvironment)
 
             # running twine checks on the new file
-            builder.python(['-m', 'twine', 'check',
-                            os.path.join(temp_dist_dir, '*'), '--strict'],
-                           title='Twine check',
-                           exception=TwineCheckFailed)
+            builder_runner.python(['-m', 'twine', 'check',
+                                   #os.path.join(temp_dist_dir, '*'),
+                                   str(newly_built_whl_file),
+                                   '--strict'],
+                                  title='Twine check',
+                                  exception=TwineCheckFailed)
 
             # TEST VENV #######################################################
 
             self.installer_venv = TempVenv()
-
-            self._close_us.append(self.installer_venv)
-            installer_python = self.installer_venv.__enter__()
-            self._installer = Runner(installer_python, at='installer venv')
+            self._exit_on_cleanup.append(self.installer_venv)
+            installer_python_exe: str = self.installer_venv.__enter__()
+            self._installer = Runner(installer_python_exe, at='installer venv')
 
             self._installer.python('-m pip install --upgrade pip',
                                    title='Upgrading pip',
                                    exception=CannotInitializeEnvironment)
 
             self._installer.python(
-                ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
-                title=f'Installing {whl.name}',
+                ['-m', 'pip', 'install', '--force-reinstall', str(newly_built_whl_file)],
+                title=f'Installing {newly_built_whl_file.name}',
                 exception=FailedToInstallPackage)
 
     def cleanup(self, exc_type=None, exc_val=None, exc_tb=None):
-        for x in reversed(self._close_us):
+        for x in reversed(self._exit_on_cleanup):
             x.__exit__(exc_type, exc_val, exc_tb)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -211,6 +219,7 @@ class Package:
         return o
 
     def run_python_code(self, code: str, rstrip: bool = True) -> str:
+        assert self._installer is not None
         with TemporaryDirectory() as temp_current_dir:
             cp = self._installer.python(
                 ['-c', code],
@@ -228,6 +237,7 @@ class Package:
                        expected_return_code: int = 0):
 
         with TemporaryDirectory() as temp_cwd:
+            assert self.installer_venv is not None
             activate = self.installer_venv.paths.posix_bash_activate
             code = '\n'.join(["#!/bin/bash",
                               "set -e",
@@ -236,6 +246,7 @@ class Package:
 
             # we need executable='/bin/bash' for Ubuntu 18.04, it will run
             # '/bin/sh' otherwise. For MacOS 10.13 it seems to be optional
+            assert self._installer is not None
             cp = self._installer.command(
                 code,
                 title="Running Bash code (cwd is temp dir)",
@@ -253,6 +264,7 @@ class Package:
                          expected_return_code: int = 0):
         """Runs command in cmd.exe"""
         with TemporaryDirectory() as temp_cwd:
+            assert self.installer_venv is not None
             activate_bat = self.installer_venv.paths.windows_cmdexe_activate
 
             # temp file with commands to run
@@ -262,6 +274,7 @@ class Package:
                            code]))
 
             # todo param /u formats output as unicode?
+            assert self._installer is not None
             cp = self._installer.command(
                 ["cmd.exe", "/q", "/c", str(temp_bat_file)],
                 title="Running code in cmd.exe (cwd is temp dir)",

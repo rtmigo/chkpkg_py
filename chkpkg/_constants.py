@@ -1,4 +1,4 @@
-__name__ = "chkpkg",
+__name__ = "chkpkg"
 __version__ = '0.4.1'
 __author__ = "Artёm IG"
 __author_email__ = "ortemeo@gmail.com"

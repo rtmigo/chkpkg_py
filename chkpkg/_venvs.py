@@ -47,10 +47,14 @@ class TempVenv:
 
     @property
     def venv_dir_str(self) -> str:
+        if self._temp_dir is None:
+            raise Exception("No temp dir name. Did you call __enter__?")
         return self._temp_dir.name
 
     @property
     def paths(self) -> VenvPaths:
+        if self._temp_dir is None:
+            raise Exception("No temp dir name. Did you call __enter__?")
         return VenvPaths(self._temp_dir.name)
 
     def create(self):
