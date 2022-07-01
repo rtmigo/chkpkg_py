@@ -3,7 +3,7 @@
 import os
 import sys
 from pathlib import Path
-from subprocess import run as run_process, CalledProcessError, PIPE, STDOUT, \
+from subprocess import run as run_process, PIPE, STDOUT, \
     CompletedProcess
 from tempfile import TemporaryDirectory
 from typing import Optional, List, Union, Type, Any
@@ -50,7 +50,7 @@ class Runner:
                args: Union[str, List[str]],
                title: str,
                cwd: Union[Path, str] = None,
-               exception: Type[CompletedProcessError] = None):
+               exception: Type[BaseException] = None):
 
         args_list = args.split() if isinstance(args, str) else args
         args_list = [self.python_exe] + args_list
@@ -60,7 +60,7 @@ class Runner:
                 args: Union[str, List[str]],
                 title: str,
                 cwd: Union[Path, str] = None,
-                exception: Type[CompletedProcessError] = None,
+                exception: Type[BaseException] = None,
                 executable: str = None,
                 shell: bool = False,
                 expected_return_code: int = 0):
@@ -73,7 +73,7 @@ class Runner:
              args_list,
              title: str,
              cwd: Union[Path, str] = None,
-             exception: Type[CompletedProcessError] = None,
+             exception: Type[BaseException] = None,
              executable: str = None,
              shell: bool = False,
              expected_return_code: int = 0):
@@ -93,7 +93,9 @@ class Runner:
         if cp.returncode != expected_return_code:
             if exception is None:
                 exception = CompletedProcessError
-            raise exception(process=cp)
+            if exception == CompletedProcessError:
+                raise CompletedProcessError(process=cp)
+            raise exception()
             # if exception is None:
             #     # the CalledProcessError always prints something like
             #     # "greeter_cli hi' returned non-zero exit status 0."
@@ -134,34 +136,37 @@ class Package:
         return self
 
     def init(self):
-        tv = TempVenv()
-        self._exit_on_cleanup.append(tv)
-        builder_python = tv.__enter__()
-
-        builder = Runner(builder_python, at='builder venv')
+        builder_venv = TempVenv()
+        self._exit_on_cleanup.append(builder_venv)
+        builder_python_exe: str = builder_venv.__enter__()
+        builder_runner = Runner(builder_python_exe, at='builder venv')
 
         # INSTALLING BUILD ####################################################
 
-        builder.python('-m pip install --upgrade pip',
-                       title='Upgrading pip',
-                       exception=CannotInitializeEnvironment)
-        builder.python('-m pip install --upgrade build',
-                       title='Installing build',
-                       exception=CannotInitializeEnvironment)
+        print("** point 1")
+        builder_runner.python('-m pip install --upgrade pip',
+                              title='Upgrading pip',
+                              exception=CannotInitializeEnvironment)
+        print("** point 2")
+        builder_runner.python('-m pip install --upgrade build',
+                              title='Installing build',
+                              exception=CannotInitializeEnvironment)
+        print("** point 3")
 
         with TemporaryDirectory() as temp_dist_dir:
+            print("** point 4")
             # BUILDING ########################################################
 
             with BuildCleaner(self.project_source_dir):
-                builder.python(
+                builder_runner.python(
                     ['-m', 'build', '--outdir', temp_dist_dir, '--wheel'],
                     title='Building the .whl',
                     cwd=self.project_source_dir)
 
             # finding the .whl file we just created
-            whl = find_latest_wheel(Path(temp_dist_dir))
-            whl = whl.absolute()
-            print(f'Latest wheel: {whl}')
+            newly_built_whl_file: Path = find_latest_wheel(Path(temp_dist_dir))
+            newly_built_whl_file = newly_built_whl_file.absolute()
+            print(f'Latest wheel: {newly_built_whl_file}')
 
             # TWINE CHECK #####################################################
 
@@ -171,31 +176,32 @@ class Package:
             # This version of twine supports Metadata-Version 1.0, 1.1, 1.2,
             # 2.0, and 2.1.
 
-            builder.python('-m pip install --upgrade twine',
-                           title='Installing twine',
-                           exception=CannotInitializeEnvironment)
+            builder_runner.python('-m pip install --upgrade twine',
+                                  title='Installing twine',
+                                  exception=CannotInitializeEnvironment)
 
             # running twine checks on the new file
-            builder.python(['-m', 'twine', 'check',
-                            os.path.join(temp_dist_dir, '*'), '--strict'],
-                           title='Twine check',
-                           exception=TwineCheckFailed)
+            builder_runner.python(['-m', 'twine', 'check',
+                                   #os.path.join(temp_dist_dir, '*'),
+                                   str(newly_built_whl_file),
+                                   '--strict'],
+                                  title='Twine check',
+                                  exception=TwineCheckFailed)
 
             # TEST VENV #######################################################
 
             self.installer_venv = TempVenv()
-
             self._exit_on_cleanup.append(self.installer_venv)
-            installer_python = self.installer_venv.__enter__()
-            self._installer = Runner(installer_python, at='installer venv')
+            installer_python_exe: str = self.installer_venv.__enter__()
+            self._installer = Runner(installer_python_exe, at='installer venv')
 
             self._installer.python('-m pip install --upgrade pip',
                                    title='Upgrading pip',
                                    exception=CannotInitializeEnvironment)
 
             self._installer.python(
-                ['-m', 'pip', 'install', '--force-reinstall', str(whl)],
-                title=f'Installing {whl.name}',
+                ['-m', 'pip', 'install', '--force-reinstall', str(newly_built_whl_file)],
+                title=f'Installing {newly_built_whl_file.name}',
                 exception=FailedToInstallPackage)
 
     def cleanup(self, exc_type=None, exc_val=None, exc_tb=None):
