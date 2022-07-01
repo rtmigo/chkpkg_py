@@ -8,7 +8,9 @@ setup(
     author="John Smith",
     description="Sample package",
 
-    packages=find_packages(),
+    packages=["greeter"],
+    package_data={"greeter": ["py.typed"]},
+
     install_requires=[],
 
     long_description="This package helps to test CHKPKG functionalities.",

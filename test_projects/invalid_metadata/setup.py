@@ -3,16 +3,18 @@ from setuptools import setup, find_packages
 # we need to add some meta-data so [twine check] will complete without warnings
 
 setup(
-    #name="greeter",
-    #version="0.0.1",
+    name="greeter",
+    version="6.6.6",
     author="John Smith",
-    description="Sample package",
+
 
     packages=find_packages(),
     install_requires=[],
 
-    long_description="This package helps to test CHKPKG functionalities.",
-    long_description_content_type='text/markdown',
+    # intentionally omitting descriptions
+    #description="Sample package",
+    #long_description="This package helps to test CHKPKG functionalities.",
+    #long_description_content_type='text/markdown',
 
     entry_points={
         'console_scripts': [

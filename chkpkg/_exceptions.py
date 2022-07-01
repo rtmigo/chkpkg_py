@@ -48,3 +48,7 @@ class CannotInitializeEnvironment(ChkpkgException):
 
 class CodeExecutionFailed(CompletedProcessError):
     pass
+
+
+class PytypedNotFound(ChkpkgException):
+    pass

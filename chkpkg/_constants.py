@@ -1,5 +1,5 @@
-__name__ = "chkpkg",
-__version__ = '0.4.1'
+__name__ = "chkpkg"
+__version__ = '0.5.0'
 __author__ = "Artёm IG"
 __author_email__ = "ortemeo@gmail.com"
 __license__ = "MIT"
