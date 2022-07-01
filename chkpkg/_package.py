@@ -11,6 +11,7 @@ from typing import Optional, List, Union, Type, Any
 from ._cleaner import BuildCleaner
 from ._exceptions import TwineCheckFailed, FailedToInstallPackage, \
     CannotInitializeEnvironment, CodeExecutionFailed, CompletedProcessError
+from ._require_pytyped import get_module_path, require_dir_contains_pytyped
 from ._venvs import TempVenv
 
 
@@ -143,18 +144,14 @@ class Package:
 
         # INSTALLING BUILD ####################################################
 
-        print("** point 1")
         builder_runner.python('-m pip install --upgrade pip',
                               title='Upgrading pip',
                               exception=CannotInitializeEnvironment)
-        print("** point 2")
         builder_runner.python('-m pip install --upgrade build',
                               title='Installing build',
                               exception=CannotInitializeEnvironment)
-        print("** point 3")
 
         with TemporaryDirectory() as temp_dist_dir:
-            print("** point 4")
             # BUILDING ########################################################
 
             with BuildCleaner(self.project_source_dir):
@@ -182,7 +179,6 @@ class Package:
 
             # running twine checks on the new file
             builder_runner.python(['-m', 'twine', 'check',
-                                   #os.path.join(temp_dist_dir, '*'),
                                    str(newly_built_whl_file),
                                    '--strict'],
                                   title='Twine check',
@@ -200,7 +196,8 @@ class Package:
                                    exception=CannotInitializeEnvironment)
 
             self._installer.python(
-                ['-m', 'pip', 'install', '--force-reinstall', str(newly_built_whl_file)],
+                ['-m', 'pip', 'install', '--force-reinstall',
+                 str(newly_built_whl_file)],
                 title=f'Installing {newly_built_whl_file.name}',
                 exception=FailedToInstallPackage)
 
@@ -226,7 +223,6 @@ class Package:
                 title="Running Python code (cwd is temp dir)",
                 cwd=temp_current_dir,
                 exception=CodeExecutionFailed)
-
             return self._output(cp, rstrip)
 
     @property
@@ -293,3 +289,8 @@ class Package:
             method = self._run_bash_code
         return method(code, rstrip=rstrip,
                       expected_return_code=expected_return_code)
+
+    def require_pytyped(self, module: str):
+        assert self._installer is not None
+        path = get_module_path(self._installer.python_exe, module)
+        require_dir_contains_pytyped(path.parent)
