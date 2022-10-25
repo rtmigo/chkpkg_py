@@ -1,6 +1,6 @@
 __name__ = "chkpkg"
-__version__ = '0.5.0'
-__author__ = "Artёm IG"
+__version__ = '0.5.1'
+__author__ = "Artёm iG"
 __author_email__ = "ortemeo@gmail.com"
 __license__ = "MIT"
 __summary__ = "Tests Python package sources to see if they build " \

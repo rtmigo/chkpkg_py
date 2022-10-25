@@ -34,6 +34,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[],
     packages=[name],
+    package_data={name: ['py.typed']},
 
     description=constants['__summary__'],
 
@@ -45,7 +46,6 @@ setup(
     license=constants['__license__'],
 
     classifiers=[
-        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
