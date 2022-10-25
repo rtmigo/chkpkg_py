@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: (c) 2021 Artёm IG <github.com/rtmigo>
+# SPDX-FileCopyrightText: (c) 2021 Artёm iG <github.com/rtmigo>
 # SPDX-License-Identifier: MIT
 
 from subprocess import CompletedProcess
@@ -13,10 +13,9 @@ class ChkpkgException(Exception):
         self.inner = inner
 
     def __str__(self):
-        return "\n".join([
-            str(super()),
-            f"inner: {self.inner}"
-        ])
+        return "\n".join(
+            [super().__str__()]
+            + [f"inner: {self.inner}"] if self.inner else [])
 
 
 class CompletedProcessError(ChkpkgException):
@@ -29,7 +28,7 @@ class CompletedProcessError(ChkpkgException):
 
     def __str__(self):
         return "\n".join([
-            str(super()),
+            super().__str__(),
             f"process: {self.process}"
         ])
 
