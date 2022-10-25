@@ -127,3 +127,7 @@ pkg.cleanup()
 The `cleanup` method removes all temporary directories created during building
 and testing.
 
+# License
+
+Copyright © 2021 [Artёm iG](https://github.com/rtmigo).
+Released under the [MIT License](LICENSE).
