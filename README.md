@@ -129,5 +129,5 @@ and testing.
 
 # License
 
-Copyright © 2021 [Artёm iG](https://github.com/rtmigo).
+Copyright © 2021 [Arteom iG](https://github.com/rtmigo).
 Released under the [MIT License](LICENSE).
